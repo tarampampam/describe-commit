@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/urfave/cli/v3"
 
+	"gh.tarampamp.am/describe-commit/internal/ai"
 	"gh.tarampamp.am/describe-commit/internal/diff"
-	"gh.tarampamp.am/describe-commit/internal/providers"
 	"gh.tarampamp.am/describe-commit/internal/version"
 )
 
@@ -18,6 +19,7 @@ type App struct {
 
 	options struct {
 		ShortMessageOnly bool
+		EnableEmoji      bool
 
 		Providers struct {
 			Gemini struct {
@@ -37,6 +39,13 @@ func NewApp() func(context.Context, []string /* args */) error { //nolint:funlen
 			Aliases:  []string{"s"},
 			Usage:    "generate a short commit message (subject line) only",
 			Sources:  cli.EnvVars("SHORT_MESSAGE_ONLY"),
+			OnlyOnce: true,
+		}
+		enableEmojiFlag = cli.BoolFlag{
+			Name:     "enable-emoji",
+			Aliases:  []string{"e"},
+			Usage:    "enable emoji in the commit message",
+			Sources:  cli.EnvVars("ENABLE_EMOJI"),
 			OnlyOnce: true,
 		}
 		geminiApiKeyFlag = cli.StringFlag{
@@ -59,37 +68,38 @@ func NewApp() func(context.Context, []string /* args */) error { //nolint:funlen
 	)
 
 	app.c = &cli.Command{
-		Usage:     "describe commit",
+		Usage:     "This tool uses AI to generate a commit message based on the changes made",
 		ArgsUsage: "[dir-path]",
-		Flags: []cli.Flag{ // global flags
+		Flags: []cli.Flag{
+			&shortMessageOnlyFlag,
+			&enableEmojiFlag,
 			&geminiApiKeyFlag,
 			&geminiModelNameFlag,
-			&shortMessageOnlyFlag,
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			var opt = &app.options
 
 			opt.ShortMessageOnly = c.Bool(shortMessageOnlyFlag.Name)
+			opt.EnableEmoji = c.Bool(enableEmojiFlag.Name)
 			opt.Providers.Gemini.ApiKey = c.String(geminiApiKeyFlag.Name)
 			opt.Providers.Gemini.ModelName = c.String(geminiModelNameFlag.Name)
 
-			var workingDir = c.Args().First()
+			var workingDir = strings.TrimSpace(c.Args().First())
 
 			if workingDir == "" {
-				cwd, err := os.Getwd()
-				if err != nil {
-					return fmt.Errorf("getwd failed: %w", err)
+				if cwd, err := os.Getwd(); err != nil {
+					return fmt.Errorf("failed to get the current working directory: %w", err)
+				} else {
+					workingDir = cwd
 				}
-
-				workingDir = cwd
 			}
 
 			if stat, err := os.Stat(workingDir); err != nil {
 				if os.IsNotExist(err) {
-					return fmt.Errorf("not found: %s", workingDir)
+					return fmt.Errorf("working directory does not exist: %s", workingDir)
 				}
 
-				return fmt.Errorf("stat failed: %w", err)
+				return err
 			} else if !stat.IsDir() {
 				return fmt.Errorf("not a directory: %s", workingDir)
 			}
@@ -115,13 +125,18 @@ func (app *App) Run(ctx context.Context, workingDir string) error {
 		return fmt.Errorf("no changes found in %s (probably nothing staged; try `git add -A`)", workingDir)
 	}
 
-	var provider = providers.NewGemini(
+	var provider = ai.NewGemini(
 		ctx,
 		app.options.Providers.Gemini.ApiKey,
 		app.options.Providers.Gemini.ModelName,
 	)
 
-	response, respErr := provider.Query(ctx, changes, providers.WithShortMessageOnly(app.options.ShortMessageOnly))
+	response, respErr := provider.Query(
+		ctx,
+		changes,
+		ai.WithShortMessageOnly(app.options.ShortMessageOnly),
+		ai.WithEmoji(app.options.EnableEmoji),
+	)
 	if respErr != nil {
 		return respErr
 	}

@@ -1,7 +1,7 @@
 # describe-commit
 
 > [!WARNING]
-> This project is under active development and is not yet ready for use.
+> This project is under active development and is not yet ready for use
 
 ## Gemini
 
