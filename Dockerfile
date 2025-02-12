@@ -45,15 +45,15 @@ RUN set -x \
       -trimpath \
       -ldflags "-s -w -X gh.tarampamp.am/describe-commit/internal/version.version=${APP_VERSION}" \
       -o ./app \
-      ./cmd/app/ \
-    && ./app --version \
+      ./cmd/describe-commit/ \
+    && ./describe-commit --version \
     # prepare rootfs for runtime
     && mkdir -p /tmp/rootfs \
     && cd /tmp/rootfs \
     && mkdir -p ./etc ./bin \
     && echo 'appuser:x:10001:10001::/nonexistent:/sbin/nologin' > ./etc/passwd \
     && echo 'appuser:x:10001:' > ./etc/group \
-    && mv /src/app ./bin/app
+    && mv /src/describe-commit ./bin/describe-commit
 
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
 FROM docker.io/library/alpine:3.21 AS runtime
@@ -79,5 +79,5 @@ COPY --from=compile /tmp/rootfs /
 # use an unprivileged user
 USER 10001:10001
 
-ENTRYPOINT ["/bin/app"]
+ENTRYPOINT ["/bin/describe-commit"]
 CMD ["--help"]

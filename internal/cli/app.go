@@ -1,4 +1,4 @@
-package describe_commit
+package cli
 
 import (
 	"context"

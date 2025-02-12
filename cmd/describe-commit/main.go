@@ -35,5 +35,5 @@ func run() error {
 	defer cancel()
 
 	// run the CLI application
-	return describe_commit.NewApp()(ctx, os.Args)
+	return cli.NewApp()(ctx, os.Args)
 }
