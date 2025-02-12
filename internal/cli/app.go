@@ -17,6 +17,8 @@ type App struct {
 	c *cli.Command
 
 	options struct {
+		ShortMessageOnly bool
+
 		Providers struct {
 			Gemini struct {
 				ApiKey    string
@@ -30,8 +32,16 @@ func NewApp() func(context.Context, []string /* args */) error {
 	var app App
 
 	var (
+		shortMessageOnlyFlag = cli.BoolFlag{
+			Name:     "short-message-only",
+			Aliases:  []string{"s"},
+			Usage:    "generate a short commit message (subject line) only",
+			Sources:  cli.EnvVars("SHORT_MESSAGE_ONLY"),
+			OnlyOnce: true,
+		}
 		geminiApiKeyFlag = cli.StringFlag{
 			Name:     "gemini-api-key",
+			Aliases:  []string{"ga"},
 			Usage:    "Gemini API key",
 			Sources:  cli.EnvVars("GEMINI_API_KEY"),
 			OnlyOnce: true,
@@ -39,6 +49,7 @@ func NewApp() func(context.Context, []string /* args */) error {
 		}
 		geminiModelNameFlag = cli.StringFlag{
 			Name:     "gemini-model-name",
+			Aliases:  []string{"gm"},
 			Usage:    "Gemini model name",
 			Sources:  cli.EnvVars("GEMINI_MODEL_NAME"),
 			OnlyOnce: true,
@@ -53,10 +64,12 @@ func NewApp() func(context.Context, []string /* args */) error {
 		Flags: []cli.Flag{ // global flags
 			&geminiApiKeyFlag,
 			&geminiModelNameFlag,
+			&shortMessageOnlyFlag,
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			var opt = &app.options
 
+			opt.ShortMessageOnly = c.Bool(shortMessageOnlyFlag.Name)
 			opt.Providers.Gemini.ApiKey = c.String(geminiApiKeyFlag.Name)
 			opt.Providers.Gemini.ModelName = c.String(geminiModelNameFlag.Name)
 
@@ -98,13 +111,17 @@ func (app *App) Run(ctx context.Context, workingDir string) error {
 		changes = delta
 	}
 
+	if changes == "" {
+		return fmt.Errorf("no changes found in %s (probably nothing staged; try `git add .`)", workingDir)
+	}
+
 	var provider = providers.NewGemini(
 		ctx,
 		app.options.Providers.Gemini.ApiKey,
 		app.options.Providers.Gemini.ModelName,
 	)
 
-	response, respErr := provider.Query(ctx, changes, providers.WithShortMessageOnly(false))
+	response, respErr := provider.Query(ctx, changes, providers.WithShortMessageOnly(app.options.ShortMessageOnly))
 	if respErr != nil {
 		return respErr
 	}

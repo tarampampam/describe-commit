@@ -11,6 +11,7 @@ ENV \
 
 # install development tools and dependencies
 RUN set -x \
+    && apk add --no-cache git \
     # renovate: source=github-releases name=golangci/golangci-lint
     && GOLANGCI_LINT_VERSION="1.63.4" \
     && wget -O- -nv "https://cdn.jsdelivr.net/gh/golangci/golangci-lint@v${GOLANGCI_LINT_VERSION}/install.sh" \
@@ -69,11 +70,11 @@ LABEL \
     org.opencontainers.version="$APP_VERSION" \
     org.opencontainers.image.licenses="MIT"
 
-# import compiled application
-COPY --from=compile /tmp/rootfs /
-
 # install git
 RUN apk add --no-cache git
+
+# import compiled application
+COPY --from=compile /tmp/rootfs /
 
 # use an unprivileged user
 USER 10001:10001
