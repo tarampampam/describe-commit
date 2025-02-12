@@ -79,8 +79,6 @@ func TestGeneratePrompt(t *testing.T) {
 
 			got := strings.Join(generatePrompt(tc.giveOpts), "\n")
 
-			t.Log(got)
-
 			for _, want := range tc.wantContains {
 				if !strings.Contains(got, want) {
 					t.Errorf("want %q to contain %q", got, want)
