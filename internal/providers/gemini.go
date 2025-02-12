@@ -28,14 +28,14 @@ func NewGemini(ctx context.Context, apiKey, model string) *Gemini {
 	}
 }
 
-var geminiSafetySettings = []*genai.SafetySetting{
+var geminiSafetySettings = []*genai.SafetySetting{ //nolint:gochecknoglobals
 	{Category: genai.HarmCategoryDangerousContent, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
 	{Category: genai.HarmCategoryHarassment, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
 	{Category: genai.HarmCategoryHateSpeech, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
 	{Category: genai.HarmCategorySexuallyExplicit, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
 }
 
-func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (string, error) {
+func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (string, error) { //nolint:funlen
 	var (
 		opt = options{}.Apply(opts...)
 
@@ -49,7 +49,10 @@ func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (strin
 		{Text: "Focus on the WHAT and WHY of the change"},
 		{Text: "Keep the commit message within 72 characters for the first line"},
 		{Text: "The message should be imperative (e.g., \"Fix bug\", \"Add feature\") and describe what the change does"},
-		{Text: "If the change is complex, provide a short summary followed by a blank line and a more detailed explanation in bullet points"},
+		{
+			Text: "If the change is complex, provide a short summary followed by a blank line and a more detailed " +
+				"explanation in bullet points",
+		},
 		{Text: "Do not add a period at the end of each line"},
 	}
 
@@ -60,7 +63,10 @@ func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (strin
 	} else {
 		modelInstructions = append(modelInstructions,
 			&genai.Part{Text: "Avoid generic messages like \"Updated files\" or \"Fixed bugs\". Be specific"},
-			&genai.Part{Text: "Use present tense (e.g., \"Fix\", \"Add\", \"Refactor\") instead of past tense (e.g., \"Fixed\", \"Added\", \"Refactored\")"},
+			&genai.Part{
+				Text: "Use present tense (e.g., \"Fix\", \"Add\", \"Refactor\") instead of past tense (e.g., \"Fixed\", " +
+					"\"Added\", \"Refactored\")",
+			},
 		)
 	}
 
