@@ -44,7 +44,7 @@ RUN set -x \
     && CGO_ENABLED=0 go build \
       -trimpath \
       -ldflags "-s -w -X gh.tarampamp.am/describe-commit/internal/version.version=${APP_VERSION}" \
-      -o ./app \
+      -o ./describe-commit \
       ./cmd/describe-commit/ \
     && ./describe-commit --version \
     # prepare rootfs for runtime
