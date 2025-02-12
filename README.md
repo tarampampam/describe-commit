@@ -1,5 +1,8 @@
 # describe-commit
 
+> [!WARNING]
+> This project is under active development and is not yet ready for use.
+
 ## Gemini
 
 - Generate your own Gemini API token: <https://aistudio.google.com/app/apikey>

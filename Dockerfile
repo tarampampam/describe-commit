@@ -80,4 +80,3 @@ COPY --from=compile /tmp/rootfs /
 USER 10001:10001
 
 ENTRYPOINT ["/bin/describe-commit"]
-CMD ["--help"]
