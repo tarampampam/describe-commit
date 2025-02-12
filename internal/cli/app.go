@@ -1,4 +1,4 @@
-package cli
+package describe_commit
 
 import (
 	"context"
@@ -28,7 +28,7 @@ type App struct {
 	}
 }
 
-func NewApp() func(context.Context, []string /* args */) error {
+func NewApp() func(context.Context, []string /* args */) error { //nolint:funlen
 	var app App
 
 	var (
@@ -112,7 +112,7 @@ func (app *App) Run(ctx context.Context, workingDir string) error {
 	}
 
 	if changes == "" {
-		return fmt.Errorf("no changes found in %s (probably nothing staged; try `git add .`)", workingDir)
+		return fmt.Errorf("no changes found in %s (probably nothing staged; try `git add -A`)", workingDir)
 	}
 
 	var provider = providers.NewGemini(
