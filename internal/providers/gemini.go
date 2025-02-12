@@ -9,8 +9,9 @@ import (
 )
 
 type Gemini struct {
-	client *genai.Client
-	model  string
+	client         *genai.Client
+	model          string
+	safetySettings []*genai.SafetySetting
 }
 
 func NewGemini(ctx context.Context, apiKey, model string) *Gemini {
@@ -25,50 +26,71 @@ func NewGemini(ctx context.Context, apiKey, model string) *Gemini {
 	return &Gemini{
 		client: client,
 		model:  model,
+		safetySettings: []*genai.SafetySetting{
+			{Category: genai.HarmCategoryDangerousContent, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
+			{Category: genai.HarmCategoryHarassment, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
+			{Category: genai.HarmCategoryHateSpeech, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
+			{Category: genai.HarmCategorySexuallyExplicit, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
+		},
 	}
-}
-
-var geminiSafetySettings = []*genai.SafetySetting{ //nolint:gochecknoglobals
-	{Category: genai.HarmCategoryDangerousContent, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
-	{Category: genai.HarmCategoryHarassment, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
-	{Category: genai.HarmCategoryHateSpeech, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
-	{Category: genai.HarmCategorySexuallyExplicit, Threshold: genai.HarmBlockThresholdBlockLowAndAbove},
 }
 
 func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (string, error) { //nolint:funlen
 	var (
-		opt = options{}.Apply(opts...)
-
-		temperature, topP            float64 = 0.2, 0.1
-		candidateCount, maxOutTokens int64   = 1, 500
+		opt               = options{}.Apply(opts...)
+		modelInstructions = []*genai.Part{
+			{
+				Text: "Generate a concise and informative git commit message subject line based on the provided code diff",
+			},
+			{
+				Text: "Use the conventional commit format (<type>(<scope>): <message>) where appropriate (the 'type' " +
+					"can be 'feat', 'fix', 'docs', 'style', 'refactor', 'test', 'chore', etc., in lowercase)",
+			},
+			{
+				Text: "Focus on the WHAT and WHY of the change",
+			},
+			{
+				Text: "Keep the commit message within 72 characters for the first line",
+			},
+			{
+				Text: "If the change is complex, provide a short summary followed by a blank line and a more detailed " +
+					"explanation in bullet points",
+			},
+			{
+				Text: "Do not generate or retain any sensitive information such as passwords, API keys, personally " +
+					"identifiable information (PII), or financial data",
+			},
+			{
+				Text: "Do not add a period at the end of each line",
+			},
+		}
 	)
-
-	var modelInstructions = []*genai.Part{
-		{Text: "Generate a concise and informative git commit message subject line based on the provided code diff"},
-		{Text: "Use the conventional commit format (<type>(<scope>): <message>) where appropriate"},
-		{Text: "Focus on the WHAT and WHY of the change"},
-		{Text: "Keep the commit message within 72 characters for the first line"},
-		{Text: "The message should be imperative (e.g., \"Fix bug\", \"Add feature\") and describe what the change does"},
-		{
-			Text: "If the change is complex, provide a short summary followed by a blank line and a more detailed " +
-				"explanation in bullet points",
-		},
-		{Text: "Do not add a period at the end of each line"},
-	}
 
 	if opt.ShortMessageOnly {
 		modelInstructions = append(modelInstructions,
-			&genai.Part{Text: "Return only the short commit message (usually the first line) without the detailed explanation"},
+			&genai.Part{
+				Text: "Return only the short commit message (usually the first line) without the detailed explanation",
+			},
+			&genai.Part{
+				Text: "The message should be imperative (e.g., 'Fix bug', 'Add feature') and describe what the change does",
+			},
 		)
 	} else {
 		modelInstructions = append(modelInstructions,
-			&genai.Part{Text: "Avoid generic messages like \"Updated files\" or \"Fixed bugs\". Be specific"},
 			&genai.Part{
-				Text: "Use present tense (e.g., \"Fix\", \"Add\", \"Refactor\") instead of past tense (e.g., \"Fixed\", " +
-					"\"Added\", \"Refactored\")",
+				Text: "Avoid generic messages like 'Updated files' or 'Fixed bugs'. Be specific",
+			},
+			&genai.Part{
+				Text: "Use present tense (e.g., 'Fix', 'Add', 'Refactor') instead of past tense (e.g., 'Fixed', " +
+					"'Added', 'Refactored')",
 			},
 		)
 	}
+
+	var (
+		temperature, topP            float64 = 0.2, 0.1
+		candidateCount, maxOutTokens int64   = 1, 500
+	)
 
 	result, err := p.client.Models.GenerateContent(
 		ctx,
@@ -79,7 +101,7 @@ func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (strin
 				Parts: modelInstructions,
 				Role:  "model",
 			},
-			SafetySettings:  geminiSafetySettings,
+			SafetySettings:  p.safetySettings,
 			Temperature:     &temperature,
 			TopP:            &topP,
 			CandidateCount:  &candidateCount,
