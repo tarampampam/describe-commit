@@ -14,7 +14,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err.Error())
+		_, _ = fmt.Fprintln(os.Stderr, "error: "+err.Error())
 
 		os.Exit(1)
 	}

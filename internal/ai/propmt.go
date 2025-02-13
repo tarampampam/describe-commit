@@ -70,6 +70,7 @@ func generatePrompt(opt options) []string { //nolint:funlen
 
 ### Commit Body (if necessary):
 
+- Start the commit message with a single line summary.
 - If the change is more complex, add a detailed description in bullet points after a blank line.
   - Explain additional context or implementation details.
   - Include a **summary** and a list of **key points** when necessary.
@@ -83,6 +84,11 @@ func generatePrompt(opt options) []string { //nolint:funlen
 		}
 
 		b.WriteString(`feat(api): Add rate-limiting to endpoints
+
+Security has been enhanced by implementing rate-limiting on all API endpoints,
+preventing abuse by enforcing request limits. Additionally, Redis has been
+integrated to track API requests, which may be useful for future analytics.
+The configuration can be adjusted via environment variables.
 
 - Prevents abuse by enforcing request limits
 - Uses Redis for tracking API requests

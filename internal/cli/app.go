@@ -27,6 +27,8 @@ type App struct {
 				ModelName string
 			}
 		}
+
+		IsDebug bool
 	}
 }
 
@@ -65,6 +67,11 @@ func NewApp() func(context.Context, []string /* args */) error { //nolint:funlen
 			Config:   cli.StringConfig{TrimSpace: true},
 			Value:    "gemini-2.0-flash",
 		}
+		debugFlag = cli.BoolFlag{
+			Name:     "debug",
+			Usage:    "enable debug mode",
+			OnlyOnce: true,
+		}
 	)
 
 	app.c = &cli.Command{
@@ -75,6 +82,7 @@ func NewApp() func(context.Context, []string /* args */) error { //nolint:funlen
 			&enableEmojiFlag,
 			&geminiApiKeyFlag,
 			&geminiModelNameFlag,
+			&debugFlag,
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			var opt = &app.options
@@ -83,6 +91,7 @@ func NewApp() func(context.Context, []string /* args */) error { //nolint:funlen
 			opt.EnableEmoji = c.Bool(enableEmojiFlag.Name)
 			opt.Providers.Gemini.ApiKey = c.String(geminiApiKeyFlag.Name)
 			opt.Providers.Gemini.ModelName = c.String(geminiModelNameFlag.Name)
+			opt.IsDebug = c.Bool(debugFlag.Name)
 
 			var workingDir = strings.TrimSpace(c.Args().First())
 
@@ -115,11 +124,15 @@ func NewApp() func(context.Context, []string /* args */) error { //nolint:funlen
 func (app *App) Run(ctx context.Context, workingDir string) error {
 	var changes string
 
+	app.Debugf("working directory: %s\n", workingDir)
+
 	if delta, err := diff.Git(workingDir); err != nil {
 		return err
 	} else {
 		changes = delta
 	}
+
+	app.Debugf("changes:\n%s\n", changes)
 
 	if changes == "" {
 		return fmt.Errorf("no changes found in %s (probably nothing staged; try `git add -A`)", workingDir)
@@ -141,9 +154,18 @@ func (app *App) Run(ctx context.Context, workingDir string) error {
 		return respErr
 	}
 
-	if _, err := fmt.Fprintln(os.Stdout, response); err != nil {
+	app.Debugf("prompt:\n%s\n", response.Prompt)
+	app.Debugf("answer:\n%s\n\n", response.Answer)
+
+	if _, err := fmt.Fprintln(os.Stdout, response.Answer); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (app *App) Debugf(format string, args ...any) {
+	if app.options.IsDebug {
+		_, _ = fmt.Fprintf(os.Stderr, "[debug] "+format, args...)
+	}
 }

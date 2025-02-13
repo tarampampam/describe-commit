@@ -3,6 +3,17 @@ package ai
 import "context"
 
 type (
+	Provider interface {
+		// Query the remote provider for the given string.
+		Query(context.Context, string, ...Option) (*Response, error)
+	}
+
+	Response struct {
+		Prompt, Answer string
+	}
+)
+
+type (
 	options struct {
 		ShortMessageOnly bool
 		EnableEmoji      bool
@@ -23,8 +34,3 @@ func WithShortMessageOnly(on bool) Option { return func(o *options) { o.ShortMes
 
 // WithEmoji enables or disables emoji in the commit message.
 func WithEmoji(on bool) Option { return func(o *options) { o.EnableEmoji = on } }
-
-type Provider interface {
-	// Query the remote provider for the given string.
-	Query(context.Context, string, ...Option) (string, error)
-}

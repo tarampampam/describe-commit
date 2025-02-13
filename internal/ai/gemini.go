@@ -37,7 +37,7 @@ func NewGemini(ctx context.Context, apiKey, model string) *Gemini {
 	}
 }
 
-func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (string, error) { //nolint:funlen
+func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (*Response, error) { //nolint:funlen
 	var (
 		opt     = options{}.Apply(opts...)
 		prompts = generatePrompt(opt)
@@ -68,15 +68,15 @@ func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (strin
 		},
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if len(result.Candidates) == 0 {
-		return "", errors.New("no candidates found")
+		return nil, errors.New("no candidates found")
 	}
 
 	if result.Candidates[0].Content == nil {
-		return "", errors.New("no content found")
+		return nil, errors.New("no content found")
 	}
 
 	var texts = make([]string, 0, len(result.Candidates[0].Content.Parts))
@@ -99,11 +99,17 @@ func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (strin
 		var parts = strings.Split(out, "\n")
 
 		if len(parts) > 0 {
-			return parts[0], nil
+			return &Response{
+				Prompt: strings.Join(prompts, "\n"),
+				Answer: parts[0],
+			}, nil
 		} else {
-			return "", errors.New("no response from the Gemini API")
+			return nil, errors.New("no response from the Gemini API")
 		}
 	}
 
-	return out, nil
+	return &Response{
+		Prompt: strings.Join(prompts, "\n"),
+		Answer: out,
+	}, nil
 }
