@@ -1,0 +1,27 @@
+# This is an example configuration file for describe-commit.
+#
+# By default, this file is searched for in the user's configuration directory:
+# - For Linux: `~/.configs/describe-commit.yml`
+# - For Windows: `%APPDATA%\describe-commit.yml`
+# - For macOS: `~/Library/Application Support/describe-commit.yml`
+#
+# You can override this behavior by specifying the path to the configuration file using the `--config-file` flag
+# or by setting the `CONFIG_FILE` environment variable.
+
+# Generate a short commit message (subject line) only
+# @type {boolean}
+shortMessageOnly: false
+
+# Enable emoji in the commit message
+# @type {boolean}
+enableEmoji: false
+
+# Gemini provider configuration
+gemini:
+  # Gemini API key
+  # @type {string}
+  apiKey: <your-api-key>
+
+  # Gemini model name
+  # @type {string}
+  modelName: <gemini-model-name>

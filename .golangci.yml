@@ -111,6 +111,8 @@ issues:
     - temp
     - testdata
   exclude-rules:
+    - path: flags\.go
+      linters: [gochecknoglobals]
     - path: _test\.go
       linters:
         - dupl

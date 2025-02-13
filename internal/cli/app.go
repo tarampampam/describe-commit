@@ -5,115 +5,81 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/urfave/cli/v3"
 
 	"gh.tarampamp.am/describe-commit/internal/ai"
+	"gh.tarampamp.am/describe-commit/internal/config"
 	"gh.tarampamp.am/describe-commit/internal/diff"
 	"gh.tarampamp.am/describe-commit/internal/version"
 )
 
-type App struct {
+type cliApp struct {
 	c *cli.Command
 
 	options struct {
-		ShortMessageOnly bool
-		EnableEmoji      bool
+		ShortMessageOnly option[bool]
+		EnableEmoji      option[bool]
 
 		Providers struct {
 			Gemini struct {
-				ApiKey    string
-				ModelName string
+				ApiKey    option[string]
+				ModelName option[string]
 			}
 		}
-
-		IsDebug bool
 	}
 }
 
-func NewApp() func(context.Context, []string /* args */) error { //nolint:funlen
-	var app App
-
-	var (
-		shortMessageOnlyFlag = cli.BoolFlag{
-			Name:     "short-message-only",
-			Aliases:  []string{"s"},
-			Usage:    "generate a short commit message (subject line) only",
-			Sources:  cli.EnvVars("SHORT_MESSAGE_ONLY"),
-			OnlyOnce: true,
-		}
-		enableEmojiFlag = cli.BoolFlag{
-			Name:     "enable-emoji",
-			Aliases:  []string{"e"},
-			Usage:    "enable emoji in the commit message",
-			Sources:  cli.EnvVars("ENABLE_EMOJI"),
-			OnlyOnce: true,
-		}
-		geminiApiKeyFlag = cli.StringFlag{
-			Name:     "gemini-api-key",
-			Aliases:  []string{"ga"},
-			Usage:    "Gemini API key",
-			Sources:  cli.EnvVars("GEMINI_API_KEY"),
-			OnlyOnce: true,
-			Config:   cli.StringConfig{TrimSpace: true},
-		}
-		geminiModelNameFlag = cli.StringFlag{
-			Name:     "gemini-model-name",
-			Aliases:  []string{"gm"},
-			Usage:    "Gemini model name",
-			Sources:  cli.EnvVars("GEMINI_MODEL_NAME"),
-			OnlyOnce: true,
-			Config:   cli.StringConfig{TrimSpace: true},
-			Value:    "gemini-2.0-flash",
-		}
-		debugFlag = cli.BoolFlag{
-			Name:     "debug",
-			Usage:    "enable debug mode",
-			OnlyOnce: true,
-		}
-	)
+func NewApp() func(context.Context, []string /* args */) error {
+	var app cliApp
 
 	app.c = &cli.Command{
-		Usage:     "This tool uses AI to generate a commit message based on the changes made",
-		ArgsUsage: "[dir-path]",
+		Usage:       "This tool uses AI to generate a commit message based on the changes made",
+		Description: fmt.Sprintf("To debug the application, set the %s environment variable to `true`", debugEnvName),
+		ArgsUsage:   "[dir-path]",
 		Flags: []cli.Flag{
+			&configFilePathFlag,
 			&shortMessageOnlyFlag,
 			&enableEmojiFlag,
 			&geminiApiKeyFlag,
 			&geminiModelNameFlag,
-			&debugFlag,
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
-			var opt = &app.options
+			{ // initialize the options
+				var opt = &app.options
 
-			opt.ShortMessageOnly = c.Bool(shortMessageOnlyFlag.Name)
-			opt.EnableEmoji = c.Bool(enableEmojiFlag.Name)
-			opt.Providers.Gemini.ApiKey = c.String(geminiApiKeyFlag.Name)
-			opt.Providers.Gemini.ModelName = c.String(geminiModelNameFlag.Name)
-			opt.IsDebug = c.Bool(debugFlag.Name)
+				{ // first, try to load the configuration file to initialize the options as defaults
+					var cfg = new(config.Config)
 
-			var workingDir = strings.TrimSpace(c.Args().First())
+					if err := cfg.FromFile(c.String(configFilePathFlag.Name)); err == nil {
+						opt.ShortMessageOnly.SetIfNotNil(cfg.ShortMessageOnly)
+						opt.EnableEmoji.SetIfNotNil(cfg.EnableEmoji)
 
-			if workingDir == "" {
-				if cwd, err := os.Getwd(); err != nil {
-					return fmt.Errorf("failed to get the current working directory: %w", err)
-				} else {
-					workingDir = cwd
+						if sub := cfg.Gemini; sub != nil {
+							opt.Providers.Gemini.ApiKey.SetIfNotNil(sub.ApiKey)
+							opt.Providers.Gemini.ModelName.SetIfNotNil(sub.ModelName)
+						}
+					} else {
+						debugf("failed to load the configuration file: %s", err)
+					}
+				}
+
+				{ // next, override the options with the command-line flags or use their default values if they are not provided
+					opt.ShortMessageOnly.SetFromFlagIfUnset(c, shortMessageOnlyFlag.Name, c.Bool)
+					opt.EnableEmoji.SetFromFlagIfUnset(c, enableEmojiFlag.Name, c.Bool)
+					opt.Providers.Gemini.ApiKey.SetFromFlagIfUnset(c, geminiApiKeyFlag.Name, c.String)
+					opt.Providers.Gemini.ModelName.SetFromFlagIfUnset(c, geminiModelNameFlag.Name, c.String)
 				}
 			}
 
-			if stat, err := os.Stat(workingDir); err != nil {
-				if os.IsNotExist(err) {
-					return fmt.Errorf("working directory does not exist: %s", workingDir)
-				}
-
-				return err
-			} else if !stat.IsDir() {
-				return fmt.Errorf("not a directory: %s", workingDir)
+			var wd, wdErr = app.getWorkingDir(c)
+			if wdErr != nil {
+				return fmt.Errorf("wrong working directory: %w", wdErr)
 			}
 
-			return app.Run(ctx, workingDir)
+			return app.Run(ctx, wd)
 		},
 		Version: fmt.Sprintf("%s (%s)", version.Version(), runtime.Version()),
 	}
@@ -121,10 +87,10 @@ func NewApp() func(context.Context, []string /* args */) error { //nolint:funlen
 	return app.c.Run
 }
 
-func (app *App) Run(ctx context.Context, workingDir string) error {
+func (app *cliApp) Run(ctx context.Context, workingDir string) error {
 	var changes string
 
-	app.Debugf("working directory: %s\n", workingDir)
+	debugf("working directory: %s", workingDir)
 
 	if delta, err := diff.Git(workingDir); err != nil {
 		return err
@@ -132,7 +98,7 @@ func (app *App) Run(ctx context.Context, workingDir string) error {
 		changes = delta
 	}
 
-	app.Debugf("changes:\n%s\n", changes)
+	debugf("changes:\n%s", changes)
 
 	if changes == "" {
 		return fmt.Errorf("no changes found in %s (probably nothing staged; try `git add -A`)", workingDir)
@@ -140,22 +106,22 @@ func (app *App) Run(ctx context.Context, workingDir string) error {
 
 	var provider = ai.NewGemini(
 		ctx,
-		app.options.Providers.Gemini.ApiKey,
-		app.options.Providers.Gemini.ModelName,
+		app.options.Providers.Gemini.ApiKey.Value,
+		app.options.Providers.Gemini.ModelName.Value,
 	)
 
 	response, respErr := provider.Query(
 		ctx,
 		changes,
-		ai.WithShortMessageOnly(app.options.ShortMessageOnly),
-		ai.WithEmoji(app.options.EnableEmoji),
+		ai.WithShortMessageOnly(app.options.ShortMessageOnly.Value),
+		ai.WithEmoji(app.options.EnableEmoji.Value),
 	)
 	if respErr != nil {
 		return respErr
 	}
 
-	app.Debugf("prompt:\n%s\n", response.Prompt)
-	app.Debugf("answer:\n%s\n\n", response.Answer)
+	debugf("prompt:\n%s", response.Prompt)
+	debugf("answer:\n%s\n", response.Answer)
 
 	if _, err := fmt.Fprintln(os.Stdout, response.Answer); err != nil {
 		return err
@@ -164,8 +130,42 @@ func (app *App) Run(ctx context.Context, workingDir string) error {
 	return nil
 }
 
-func (app *App) Debugf(format string, args ...any) {
-	if app.options.IsDebug {
-		_, _ = fmt.Fprintf(os.Stderr, "[debug] "+format, args...)
+// getWorkingDir returns the working directory to use for the application.
+func (app *cliApp) getWorkingDir(c *cli.Command) (string, error) {
+	// get the working directory from the first command-line argument
+	var dir = strings.TrimSpace(c.Args().First())
+
+	// if the argument was not set, use the `os.Getwd`
+	if dir == "" {
+		if d, err := os.Getwd(); err != nil {
+			return "", err
+		} else {
+			dir = d
+		}
+	}
+
+	// check the working directory existence
+	if stat, err := os.Stat(dir); err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("working directory does not exist: %s", dir)
+		}
+
+		return "", err
+	} else if !stat.IsDir() {
+		return "", fmt.Errorf("not a directory: %s", dir)
+	}
+
+	return dir, nil
+}
+
+const debugEnvName = "DEBUG" // environment variable name to enable debug output
+
+//nolint:gochecknoglobals,nlreturn
+var isDebuggingOn = func() (b bool) { b, _ = strconv.ParseBool(os.Getenv(debugEnvName)); return }()
+
+// debugf is a helper function to print debug information to the stderr.
+func debugf(format string, args ...any) {
+	if isDebuggingOn {
+		_, _ = fmt.Fprintf(os.Stderr, fmt.Sprintf("# [trace] %s\n", format), args...)
 	}
 }
