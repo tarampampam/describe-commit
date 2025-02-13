@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"strconv"
 	"strings"
 
 	"github.com/urfave/cli/v3"
@@ -15,6 +14,8 @@ import (
 	"gh.tarampamp.am/describe-commit/internal/diff"
 	"gh.tarampamp.am/describe-commit/internal/version"
 )
+
+//go:generate go run app_readme.go
 
 type cliApp struct {
 	c *cli.Command
@@ -32,7 +33,8 @@ type cliApp struct {
 	}
 }
 
-func NewApp() func(context.Context, []string /* args */) error {
+// NewApp creates new console application.
+func NewApp() *cli.Command {
 	var app cliApp
 
 	app.c = &cli.Command{
@@ -84,7 +86,7 @@ func NewApp() func(context.Context, []string /* args */) error {
 		Version: fmt.Sprintf("%s (%s)", version.Version(), runtime.Version()),
 	}
 
-	return app.c.Run
+	return app.c
 }
 
 func (app *cliApp) Run(ctx context.Context, workingDir string) error {
@@ -156,16 +158,4 @@ func (app *cliApp) getWorkingDir(c *cli.Command) (string, error) {
 	}
 
 	return dir, nil
-}
-
-const debugEnvName = "DEBUG" // environment variable name to enable debug output
-
-//nolint:gochecknoglobals,nlreturn
-var isDebuggingOn = func() (b bool) { b, _ = strconv.ParseBool(os.Getenv(debugEnvName)); return }()
-
-// debugf is a helper function to print debug information to the stderr.
-func debugf(format string, args ...any) {
-	if isDebuggingOn {
-		_, _ = fmt.Fprintf(os.Stderr, fmt.Sprintf("# [trace] %s\n", format), args...)
-	}
 }

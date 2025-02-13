@@ -24,5 +24,5 @@ func run() error {
 	defer cancel()
 
 	// run the CLI application
-	return cli.NewApp()(ctx, os.Args)
+	return cli.NewApp().Run(ctx, os.Args)
 }
