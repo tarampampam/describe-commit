@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -23,9 +24,17 @@ type cliApp struct {
 	options struct {
 		ShortMessageOnly option[bool]
 		EnableEmoji      option[bool]
+		MaxOutputTokens  option[int64]
+
+		AIProviderName option[string]
 
 		Providers struct {
 			Gemini struct {
+				ApiKey    option[string]
+				ModelName option[string]
+			}
+
+			OpenAI struct {
 				ApiKey    option[string]
 				ModelName option[string]
 			}
@@ -34,7 +43,7 @@ type cliApp struct {
 }
 
 // NewApp creates new console application.
-func NewApp() *cli.Command {
+func NewApp() *cli.Command { //nolint:funlen,gocognit
 	var app cliApp
 
 	app.c = &cli.Command{
@@ -45,8 +54,12 @@ func NewApp() *cli.Command {
 			&configFilePathFlag,
 			&shortMessageOnlyFlag,
 			&enableEmojiFlag,
+			&maxOutputTokensFlag,
+			&aiProviderNameFlag,
 			&geminiApiKeyFlag,
 			&geminiModelNameFlag,
+			&openAIApiKeyFlag,
+			&openAIModelNameFlag,
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			{ // initialize the options
@@ -58,10 +71,17 @@ func NewApp() *cli.Command {
 					if err := cfg.FromFile(c.String(configFilePathFlag.Name)); err == nil {
 						opt.ShortMessageOnly.SetIfNotNil(cfg.ShortMessageOnly)
 						opt.EnableEmoji.SetIfNotNil(cfg.EnableEmoji)
+						opt.MaxOutputTokens.SetIfNotNil(cfg.MaxOutputTokens)
+						opt.AIProviderName.SetIfNotNil(cfg.AIProviderName)
 
 						if sub := cfg.Gemini; sub != nil {
 							opt.Providers.Gemini.ApiKey.SetIfNotNil(sub.ApiKey)
 							opt.Providers.Gemini.ModelName.SetIfNotNil(sub.ModelName)
+						}
+
+						if sub := cfg.OpenAI; sub != nil {
+							opt.Providers.OpenAI.ApiKey.SetIfNotNil(sub.ApiKey)
+							opt.Providers.OpenAI.ModelName.SetIfNotNil(sub.ModelName)
 						}
 					} else {
 						debugf("failed to load the configuration file: %s", err)
@@ -71,8 +91,42 @@ func NewApp() *cli.Command {
 				{ // next, override the options with the command-line flags or use their default values if they are not provided
 					opt.ShortMessageOnly.SetFromFlagIfUnset(c, shortMessageOnlyFlag.Name, c.Bool)
 					opt.EnableEmoji.SetFromFlagIfUnset(c, enableEmojiFlag.Name, c.Bool)
+					opt.MaxOutputTokens.SetFromFlagIfUnset(c, maxOutputTokensFlag.Name, c.Int)
+					opt.AIProviderName.SetFromFlagIfUnset(c, aiProviderNameFlag.Name, c.String)
 					opt.Providers.Gemini.ApiKey.SetFromFlagIfUnset(c, geminiApiKeyFlag.Name, c.String)
 					opt.Providers.Gemini.ModelName.SetFromFlagIfUnset(c, geminiModelNameFlag.Name, c.String)
+					opt.Providers.OpenAI.ApiKey.SetFromFlagIfUnset(c, openAIApiKeyFlag.Name, c.String)
+					opt.Providers.OpenAI.ModelName.SetFromFlagIfUnset(c, openAIModelNameFlag.Name, c.String)
+				}
+
+				{ // validate the options
+					if opt.MaxOutputTokens.Value <= 1 {
+						return errors.New("max output tokens must be greater than 1")
+					}
+
+					if !ai.IsProviderSupported(opt.AIProviderName.Value) {
+						return fmt.Errorf("unsupported AI provider: %s", opt.AIProviderName.Value)
+					}
+
+					if opt.AIProviderName.Value == ai.ProviderGemini {
+						if opt.Providers.Gemini.ApiKey.Value == "" {
+							return errors.New("gemini API key is required")
+						}
+
+						if opt.Providers.Gemini.ModelName.Value == "" {
+							return errors.New("gemini model name is required")
+						}
+					}
+
+					if opt.AIProviderName.Value == ai.ProviderOpenAI {
+						if opt.Providers.OpenAI.ApiKey.Value == "" {
+							return errors.New("OpenAI API key is required")
+						}
+
+						if opt.Providers.OpenAI.ModelName.Value == "" {
+							return errors.New("OpenAI model name is required")
+						}
+					}
 				}
 			}
 
@@ -90,14 +144,30 @@ func NewApp() *cli.Command {
 }
 
 func (app *cliApp) Run(ctx context.Context, workingDir string) error {
-	var changes string
+	debugf("AI provider: %s", app.options.AIProviderName.Value)
+
+	var provider ai.Provider
+
+	switch app.options.AIProviderName.Value {
+	case ai.ProviderGemini:
+		provider = ai.NewGemini(
+			app.options.Providers.Gemini.ApiKey.Value,
+			app.options.Providers.Gemini.ModelName.Value,
+		)
+	case ai.ProviderOpenAI:
+		provider = ai.NewOpenAI(
+			app.options.Providers.OpenAI.ApiKey.Value,
+			app.options.Providers.OpenAI.ModelName.Value,
+		)
+	default:
+		return fmt.Errorf("unsupported AI provider: %s", app.options.AIProviderName.Value)
+	}
 
 	debugf("working directory: %s", workingDir)
 
-	if delta, err := diff.Git(workingDir); err != nil {
-		return err
-	} else {
-		changes = delta
+	changes, cErr := diff.Git(workingDir)
+	if cErr != nil {
+		return cErr
 	}
 
 	debugf("changes:\n%s", changes)
@@ -105,12 +175,6 @@ func (app *cliApp) Run(ctx context.Context, workingDir string) error {
 	if changes == "" {
 		return fmt.Errorf("no changes found in %s (probably nothing staged; try `git add -A`)", workingDir)
 	}
-
-	var provider = ai.NewGemini(
-		ctx,
-		app.options.Providers.Gemini.ApiKey.Value,
-		app.options.Providers.Gemini.ModelName.Value,
-	)
 
 	response, respErr := provider.Query(
 		ctx,

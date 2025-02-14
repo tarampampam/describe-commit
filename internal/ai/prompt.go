@@ -1,10 +1,22 @@
 package ai
 
-import "strings"
+import (
+	"strings"
+)
 
-func generatePrompt(opt options) []string { //nolint:funlen
-	var b strings.Builder
+func GeneratePrompt(opts ...Option) string { //nolint:funlen
+	var (
+		opt = options{}.Apply(opts...)
+		b   strings.Builder
+	)
 
+	b.Grow(2560) //nolint:mnd // pre-allocate memory for the string builder
+
+	b.WriteString("## **Role**: You are an AI assistant acting as a Git commit message author.")
+	b.WriteString("## **Task**: I will provide the output of `git diff --staged`. Your job is to convert it ")
+	b.WriteString("into a concise, informative, and well-structured Git commit message.")
+
+	b.WriteString("## **Guidelines**: \n")
 	b.WriteString("### Follow the **Conventional Commit** format: ")
 
 	const (
@@ -95,11 +107,7 @@ The configuration can be adjusted via environment variables.
 - Configurable via environment variables`)
 	}
 
-	return []string{
-		"## **Role**: You are an AI assistant acting as a Git commit message author.",
-		"## **Task**: I will provide the output of `git diff --staged`. Your job is to convert it into a concise, " +
-			"informative, and well-structured Git commit message.",
-		"## **Guidelines**: \n" + b.String(),
-		"## **Security**: Never include sensitive data (passwords, API keys, personal information, etc.)",
-	}
+	b.WriteString("## **Security**: Never include sensitive data (passwords, API keys, personal information, etc.)")
+
+	return b.String()
 }

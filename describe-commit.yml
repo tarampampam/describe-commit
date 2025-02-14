@@ -16,12 +16,30 @@ shortMessageOnly: false
 # @type {boolean}
 enableEmoji: false
 
+# Maximum number of tokens in the output message
+# @type {integer}
+maxOutputTokens: 500
+
+# AI provider to use
+# @enum {gemini|openai}
+aiProvider: gemini
+
 # Gemini provider configuration
 gemini:
-  # Gemini API key
+  # Gemini API key (issue your own at https://bit.ly/4jZhiKI, as of February 2025 it's free)
   # @type {string}
-  apiKey: <your-api-key>
+  apiKey: <gemini-api-key>
 
-  # Gemini model name
+  # Gemini model name (https://bit.ly/4i02ARR)
   # @type {string}
   modelName: <gemini-model-name>
+
+# OpenAI provider configuration
+openai:
+  # OpenAI API key (issue your own at https://bit.ly/4i03NbR, you need to add funds to your account to access the API)
+  # @type {string}
+  apiKey: <openai-api-key>
+
+  # OpenAI model name (https://bit.ly/4hXCXkL)
+  # @type {string}
+  modelName: <openai-model-name>

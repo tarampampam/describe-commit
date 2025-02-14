@@ -1,20 +1,24 @@
-package ai
+package ai_test
 
 import (
 	"strings"
 	"testing"
+
+	"gh.tarampamp.am/describe-commit/internal/ai"
 )
 
 func TestGeneratePrompt(t *testing.T) {
+	t.Parallel()
+
 	for name, tc := range map[string]struct {
-		giveOpts     options
+		giveOpts     []ai.Option
 		wantContains []string
 		wantNot      []string
 	}{
 		"short without emoji": {
-			giveOpts: options{
-				ShortMessageOnly: false,
-				EnableEmoji:      false,
+			giveOpts: []ai.Option{
+				ai.WithShortMessageOnly(false),
+				ai.WithEmoji(false),
 			},
 			wantContains: []string{
 				"Role", "acting as a Git",
@@ -41,9 +45,9 @@ func TestGeneratePrompt(t *testing.T) {
 			},
 		},
 		"long with emoji": {
-			giveOpts: options{
-				ShortMessageOnly: true,
-				EnableEmoji:      true,
+			giveOpts: []ai.Option{
+				ai.WithShortMessageOnly(true),
+				ai.WithEmoji(true),
 			},
 			wantContains: []string{
 				"Role", "acting as a Git",
@@ -77,7 +81,7 @@ func TestGeneratePrompt(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got := strings.Join(generatePrompt(tc.giveOpts), "\n")
+			got := ai.GeneratePrompt(tc.giveOpts...)
 
 			for _, want := range tc.wantContains {
 				if !strings.Contains(got, want) {

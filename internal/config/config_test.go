@@ -11,6 +11,8 @@ import (
 )
 
 func TestConfig_FromFile(t *testing.T) {
+	t.Parallel()
+
 	for name, tc := range map[string]struct {
 		giveContent   string
 		wantStruct    config.Config
@@ -24,15 +26,26 @@ func TestConfig_FromFile(t *testing.T) {
 			giveContent: `
 shortMessageOnly: true
 enableEmoji: false
+maxOutputTokens: 123123123
+aiProvider: foobar
 gemini:
   apiKey: <your-api-key>
-  modelName: <gemini-model-name>`,
+  modelName: <gemini-model-name>
+openai:
+  apiKey: <openai-api-key>
+  modelName: <openai-model-name>`,
 			wantStruct: func() (c config.Config) {
 				c.ShortMessageOnly = toPtr(true)
 				c.EnableEmoji = toPtr(false)
+				c.MaxOutputTokens = toPtr[int64](123123123)
+				c.AIProviderName = toPtr("foobar")
 				c.Gemini = &config.Gemini{
 					ApiKey:    toPtr("<your-api-key>"),
 					ModelName: toPtr("<gemini-model-name>"),
+				}
+				c.OpenAI = &config.OpenAI{
+					ApiKey:    toPtr("<openai-api-key>"),
+					ModelName: toPtr("<openai-model-name>"),
 				}
 
 				return
