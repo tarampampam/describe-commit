@@ -14,7 +14,11 @@ func GeneratePrompt(opts ...Option) string { //nolint:funlen
 
 	b.WriteString("## **Role**: You are an AI assistant acting as a Git commit message author.")
 	b.WriteString("## **Task**: I will provide the output of `git diff --staged`. Your job is to convert it ")
-	b.WriteString("into a concise, informative, and well-structured Git commit message.")
+	b.WriteString("into a concise, informative, and well-structured **SINGLE** Git commit message as plain text, ")
+	b.WriteString("without wrapping it in backticks, quotes, or code blocks")
+
+	b.WriteString("## **Security**: Never include sensitive data (passwords, API keys, personal information, etc.) or ")
+	b.WriteString("code snippets in the commit message")
 
 	b.WriteString("## **Guidelines**: \n")
 	b.WriteString("### Follow the **Conventional Commit** format: ")
@@ -77,12 +81,13 @@ func GeneratePrompt(opts ...Option) string { //nolint:funlen
 - **Avoid**: Vague messages like "Updated files" or "Fixed bugs". Be specific.
 - **Tense**: Use present tense (Fix, Add, Refactor), not past tense (Fixed, Added).
 - **Format**: The first line should follow the Conventional Commit format, followed by a blank line, and then a
-  detailed description. **Do not wrap result in backticks**.
+  detailed description.
 - **No periods**: Keep commit messages clean and concise without period at the end of each line.
 
 ### Commit Body (if necessary):
 
 - Start the commit message with a single line summary.
+- Never include the provided diff output in the commit message.
 - If the change is more complex, add a detailed description in bullet points after a blank line.
   - Explain additional context or implementation details.
   - Include a **summary** and a list of **key points** when necessary.
@@ -106,8 +111,6 @@ The configuration can be adjusted via environment variables.
 - Uses Redis for tracking API requests
 - Configurable via environment variables`)
 	}
-
-	b.WriteString("## **Security**: Never include sensitive data (passwords, API keys, personal information, etc.)")
 
 	return b.String()
 }

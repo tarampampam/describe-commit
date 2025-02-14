@@ -26,8 +26,14 @@ func Git(dirPath string) (string, error) {
 		":(exclude)*.sum",  // exclude .sum files
 		":(exclude)*.lock", // exclude .lock files
 		":(exclude)*.log",  // exclude .log files
-		dirPath,            // path to the directory
+		":(exclude)*.out",  // exclude .out files
+		":(exclude)*.tmp",  // exclude .tmp files
+		":(exclude)*.bak",  // exclude .bak files
+		":(exclude)*.swp",  // exclude .swp files
+		":(exclude)*.env",  // exclude .env files
 	)
+
+	cmd.Dir = dirPath
 
 	out, err := cmd.Output()
 	if err != nil {

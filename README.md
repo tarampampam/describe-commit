@@ -17,7 +17,7 @@ Currently, it supports the following AI providers:
 
 It also allows users to select the desired model for content generating.
 
-> [!INFO]
+> [!NOTE]
 > Under the hood, this app does two things before returning the generated commit message:
 >
 > - Retrieves the `git diff` for the specified directory
