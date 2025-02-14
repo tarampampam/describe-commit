@@ -28,4 +28,4 @@ func WithShortMessageOnly(on bool) Option { return func(o *options) { o.ShortMes
 func WithEmoji(on bool) Option { return func(o *options) { o.EnableEmoji = on } }
 
 // WithMaxOutputTokens sets the maximum number of tokens in the output.
-func WithMaxOutputTokens(max int) Option { return func(o *options) { o.MaxOutputTokens = int64(max) } }
+func WithMaxOutputTokens(max int64) Option { return func(o *options) { o.MaxOutputTokens = max } }

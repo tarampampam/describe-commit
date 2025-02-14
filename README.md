@@ -29,6 +29,7 @@ Global flags:
 | `--config-file="…"` (`-c`)         | path to the configuration file                                                                   | `/depends/on/your-os/describe-commit.yml` |     `CONFIG_FILE`     |
 | `--short-message-only` (`-s`)      | generate a short commit message (subject line) only                                              |                  `false`                  |  `SHORT_MESSAGE_ONLY` |
 | `--enable-emoji` (`-e`)            | enable emoji in the commit message                                                               |                  `false`                  |    `ENABLE_EMOJI`     |
+| `--max-output-tokens="…"`          | maximum number of tokens in the output message                                                   |                   `500`                   |  `MAX_OUTPUT_TOKENS`  |
 | `--ai-provider="…"` (`--ai`)       | AI provider name (gemini/openai)                                                                 |                 `gemini`                  |     `AI_PROVIDER`     |
 | `--gemini-api-key="…"` (`--ga`)    | Gemini API key (https://bit.ly/4jZhiKI, as of February 2025 it's free)                           |                                           |   `GEMINI_API_KEY`    |
 | `--gemini-model-name="…"` (`--gm`) | Gemini model name (https://bit.ly/4i02ARR)                                                       |            `gemini-2.0-flash`             |  `GEMINI_MODEL_NAME`  |

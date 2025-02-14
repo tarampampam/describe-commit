@@ -181,6 +181,7 @@ func (app *cliApp) Run(ctx context.Context, workingDir string) error {
 		changes,
 		ai.WithShortMessageOnly(app.options.ShortMessageOnly.Value),
 		ai.WithEmoji(app.options.EnableEmoji.Value),
+		ai.WithMaxOutputTokens(app.options.MaxOutputTokens.Value),
 	)
 	if respErr != nil {
 		return respErr
