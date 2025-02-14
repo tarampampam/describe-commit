@@ -1,8 +1,10 @@
 package diff
 
 import (
+	"bytes"
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
 func Git(dirPath string) (string, error) {
@@ -35,10 +37,30 @@ func Git(dirPath string) (string, error) {
 
 	cmd.Dir = dirPath
 
-	out, err := cmd.Output()
-	if err != nil {
+	var stdOut, stdErr bytes.Buffer
+
+	stdOut.Grow(1024 * 8) //nolint:mnd // 8KB
+
+	cmd.Stdout = &stdOut
+	cmd.Stderr = &stdErr
+
+	if err := cmd.Run(); err != nil {
+		if stdErr.Len() > 0 {
+			var lines = strings.Split(stdErr.String(), "\n")
+
+			// remove empty lines
+			for i := 0; i < len(lines); i++ {
+				if len(strings.TrimSpace(lines[i])) == 0 {
+					lines = append(lines[:i], lines[i+1:]...)
+					i--
+				}
+			}
+
+			err = fmt.Errorf("%s: %w", strings.Join(lines, "; "), err)
+		}
+
 		return "", fmt.Errorf("git diff failed: %w", err)
 	}
 
-	return string(out), nil
+	return stdOut.String(), nil
 }
