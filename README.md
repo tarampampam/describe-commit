@@ -17,6 +17,26 @@ Currently, it supports the following AI providers:
 
 It also allows users to select the desired model for content generating.
 
+## 🦾 tl;dr
+
+|       Turn this       |      Into this      |
+|:---------------------:|:-------------------:|
+| ![Before][before_img] | ![After][after_img] |
+
+[before_img]:https://habrastorage.org/webt/ni/z-/d1/niz-d1zfmbf4pc9kpdbvtapvljy.png
+[after_img]:https://habrastorage.org/webt/wo/8t/cd/wo8tcdgdm80fb6ayacgpse3_8hu.png
+
+Without any manual effort (there's no time to write commit messages, lazy developers unite)!
+
+## 🔥 Features list
+
+- Generates meaningful commit messages using AI
+- Supports different AI providers
+- Can generate short commit messages (subject line only)
+- Optionally includes emojis (🐛✨📝🚀✅♻️⬆️🔧🌐💡) in commit messages
+- Runs as a standalone binary (no external dependencies)
+- Available as a **Docker image**
+
 > [!NOTE]
 > Under the hood, this app does two things before returning the generated commit message:
 >
@@ -28,15 +48,6 @@ It also allows users to select the desired model for content generating.
 > the AI provider does not store your data (or stores it securely).
 >
 > The author of this tool is not responsible for any data leaks or security issues.
-
-## 🔥 Features list
-
-- Generates meaningful commit messages using AI
-- Supports different AI providers
-- Can generate short commit messages (subject line only)
-- Optionally includes emojis (🐛✨📝🚀✅♻️⬆️🔧🌐💡) in commit messages
-- Runs as a standalone binary (no external dependencies)
-- Available as a **Docker image**
 
 ## 🧩 Installation
 
@@ -63,6 +74,16 @@ Alternatively, you can use the Docker image:
 | [GitHub Container Registry][link_ghcr] | `ghcr.io/tarampampam/describe-commit` |
 
 [link_ghcr]:https://github.com/tarampampam/describe-commit/pkgs/container/describe-commit
+
+> ```shell
+> docker run --rm \
+>   -u "$(id -u):$(id -g)" \                                # to avoid problems with permissions
+>   -v "$HOME/.config/describe-commit.yml:/config.yml:ro" \ # use your configuration file
+>   -v "$(pwd):/rootfs:ro" \                                # mount current directory as read-only
+>   -e "CONFIG_FILE=/config.yml" \                          # specify the configuration file path
+>   -w "/rootfs" \                                          # set the working directory
+>     ghcr.io/tarampampam/describe-commit ...
+> ```
 
 > [!NOTE]
 > It’s recommended to avoid using the `latest` tag, as **major** upgrades may include breaking changes.
