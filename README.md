@@ -1,12 +1,134 @@
-# describe-commit
+<p align="center">
+  <a href="https://github.com/tarampampam/describe-commit#readme">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://socialify.git.ci/tarampampam/describe-commit/image?description=1&font=Raleway&forks=1&issues=1&logo=https%3A%2F%2Fhabrastorage.org%2Fwebt%2F6v%2F7-%2Fil%2F6v7-iljmr7fo1ogj3uz0kvnkhaa.png&owner=1&pulls=1&pattern=Solid&stargazers=1&theme=Dark">
+      <img align="center" src="https://socialify.git.ci/tarampampam/describe-commit/image?description=1&font=Raleway&forks=1&issues=1&logo=https%3A%2F%2Fhabrastorage.org%2Fwebt%2F6v%2F7-%2Fil%2F6v7-iljmr7fo1ogj3uz0kvnkhaa.png&owner=1&pulls=1&pattern=Solid&stargazers=1&theme=Light">
+    </picture>
+  </a>
+</p>
+
+# Describe Commit
 
 > [!WARNING]
-> This project is under active development and is not yet ready for use
+> This project is under active development and may be unstable.
 
-## Gemini
+`describe-commit` is a CLI tool that leverages AI to generate commit messages based on changes made in a Git repository.
+Currently, it supports the following AI providers:
 
-- Generate your own Gemini API token: <https://aistudio.google.com/app/apikey>
-- View usage data: <https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com/metrics>
+- OpenAI
+- Google Gemini
+
+It also allows users to select the desired model for content generating.
+
+## 🔥 Features list
+
+- Generates meaningful commit messages using AI
+- Supports different AI providers
+- Can generate short commit messages (subject line only)
+- Optionally includes emojis (🐛✨📝🚀✅♻️⬆️🔧🌐💡) in commit messages
+- Runs as a standalone binary (no external dependencies)
+- Available as a **Docker image**
+
+## 🧩 Installation
+
+Download the latest binary for your architecture from the [releases page][link_releases]. For example, to install
+on an **amd64** system (e.g., Debian, Ubuntu):
+
+```shell
+curl -SsL -o ./describe-commit https://github.com/tarampampam/describe-commit/releases/latest/download/describe-commit-linux-amd64
+chmod +x ./describe-commit
+./describe-commit --help
+```
+
+> [!TIP]
+> Each release includes binaries for **linux**, **darwin** (macOS) and **windows** (`amd64` and `arm64` architectures).
+> You can download the binary for your system from the [releases page][link_releases] (section `Assets`). And - yes,
+> all what you need is just download and run single binary file.
+
+[link_releases]:https://github.com/tarampampam/describe-commit/releases
+
+Alternatively, you can use the Docker image:
+
+| Registry                               | Image                                 |
+|----------------------------------------|---------------------------------------|
+| [GitHub Container Registry][link_ghcr] | `ghcr.io/tarampampam/describe-commit` |
+
+[link_ghcr]:https://github.com/tarampampam/describe-commit/pkgs/container/describe-commit
+
+> [!NOTE]
+> It’s recommended to avoid using the `latest` tag, as **major** upgrades may include breaking changes.
+> Instead, use specific tags in `X.Y.Z` format for version consistency.
+
+## 🚀 Usage
+
+To generate a commit message for the current Git repository, and commit the changes in a single command:
+
+```shell
+git commit -m "$(/path/to/describe-commit)"
+```
+
+> [!NOTE]
+> A Git repository must be initialized in the specified directory, and `git` must be installed on your system.
+> Additionally, ensure that changes are staged (`git add -A`) before running the tool.
+
+Or just to get a commit message for a specific directory:
+
+```shell
+describe-commit /path/to/repo
+```
+
+Will output something like:
+
+```markdown
+docs: Add initial README with project description
+
+This commit introduces the initial README file, providing a comprehensive
+overview of the `describe-commit` project. It includes a project description,
+features list, installation instructions, and usage examples.
+
+- Provides a clear introduction to the project
+- Guides users through installation and basic usage
+- Highlights key features and functionalities
+```
+
+Generate a commit message with OpenAI:
+
+```sh
+describe-commit --ai openai --openai-api-key "your-api-key"
+```
+
+```markdown
+docs(README): Update project description and installation instructions
+
+Enhanced the README file to provide a clearer project overview and detailed installation instructions. The changes aim to improve user understanding and accessibility of the `describe-commit` CLI tool.
+
+- Added project description and AI provider support
+- Included features list for better visibility
+- Updated installation instructions with binary and Docker options
+- Provided usage examples for generating commit messages
+```
+
+Generate a short commit message (only the first line) with emojis:
+
+```sh
+describe-commit -s -e
+```
+
+```markdown
+📝 docs(README): Update project description and installation instructions
+```
+
+## ⚙ Configuration
+
+You can configure `describe-commit` using a YAML file. Use [describe-commit.yml](describe-commit.yml) as a reference
+for the available options.
+
+The configuration file's location can be specified using the `--config-file` option. However, by default, the file
+is searched for in the user's configuration directory:
+
+- **Linux**: `~/.configs/describe-commit.yml`
+- **Windows**: `%APPDATA%\describe-commit.yml`
+- **macOS**: `~/Library/Application Support/describe-commit.yml`
 
 <!--GENERATED:CLI_DOCS-->
 <!-- Documentation inside this block generated by github.com/urfave/cli-docs/v3; DO NOT EDIT -->
@@ -37,3 +159,9 @@ Global flags:
 | `--openai-model-name="…"` (`--om`) | OpenAI model name (https://bit.ly/4hXCXkL)                                                       |               `gpt-4o-mini`               |  `OPENAI_MODEL_NAME`  |
 
 <!--/GENERATED:CLI_DOCS-->
+
+## License
+
+This is open-sourced software licensed under the [MIT License][link_license].
+
+[link_license]:https://github.com/tarampampam/describe-commit/blob/master/LICENSE
