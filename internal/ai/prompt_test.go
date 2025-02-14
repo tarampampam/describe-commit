@@ -22,7 +22,7 @@ func TestGeneratePrompt(t *testing.T) {
 			},
 			wantContains: []string{
 				"Role", "acting as a Git",
-				"Task", "git diff --staged", "convert it", "well-structured Git commit message",
+				"Task", "git diff --staged", "convert it", "well-structured **SINGLE** Git commit message",
 				"Guidelines",
 				"Conventional Commit",
 				"`<type>(<scope>): <message>`", "fix(auth): Resolve",
@@ -51,7 +51,7 @@ func TestGeneratePrompt(t *testing.T) {
 			},
 			wantContains: []string{
 				"Role", "acting as a Git",
-				"Task", "git diff --staged", "convert it", "well-structured Git commit message",
+				"Task", "git diff --staged", "convert it", "well-structured **SINGLE** Git commit message",
 				"Guidelines",
 				"Conventional Commit",
 				"`<emoji> <type>(<scope>): <message>`", "🐛 fix(auth): Resolve",
