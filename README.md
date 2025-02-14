@@ -9,9 +9,6 @@
 
 # Describe Commit
 
-> [!WARNING]
-> This project is under active development and may be unstable.
-
 `describe-commit` is a CLI tool that leverages AI to generate commit messages based on changes made in a Git repository.
 Currently, it supports the following AI providers:
 
@@ -19,6 +16,18 @@ Currently, it supports the following AI providers:
 - Google Gemini
 
 It also allows users to select the desired model for content generating.
+
+> [!INFO]
+> Under the hood, this app does two things before returning the generated commit message:
+>
+> - Retrieves the `git diff` for the specified directory
+> - Sends this diff to the AI provider with the provided special prompt
+>
+> Please keep in mind that when working with proprietary code, some parts of the code will be sent to the AI
+> provider. You should ensure that this is permitted by your company's policy. Additionally, make sure that
+> the AI provider does not store your data (or stores it securely).
+>
+> The author of this tool is not responsible for any data leaks or security issues.
 
 ## 🔥 Features list
 
