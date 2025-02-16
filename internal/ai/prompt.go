@@ -1,8 +1,24 @@
 package ai
 
 import (
+	"fmt"
 	"strings"
 )
+
+const (
+	ditDiffBegin, gitDiffEnd = "[---GIT-DIFF-BEGIN---]", "[---GIT-DIFF-END---]"
+	gitLogBegin, gitLogEnd   = "[---GIT-LOG-BEGIN---]", "[---GIT-LOG-END---]"
+)
+
+// wrapChanges wraps the provided diff output between the specified markers (to help the AI identify the changes).
+func wrapChanges(diff string) string {
+	return fmt.Sprintf("%s\n%s\n%s", ditDiffBegin, diff, gitDiffEnd)
+}
+
+// wrapCommits wraps the provided log output between the specified markers (to help the AI too).
+func wrapCommits(log string) string {
+	return fmt.Sprintf("%s\n%s\n%s", gitLogBegin, log, gitLogEnd)
+}
 
 func GeneratePrompt(opts ...Option) string { //nolint:funlen
 	var (
@@ -12,104 +28,148 @@ func GeneratePrompt(opts ...Option) string { //nolint:funlen
 
 	b.Grow(2560) //nolint:mnd // pre-allocate memory for the string builder
 
-	b.WriteString("## **Role**: You are an AI assistant acting as a Git commit message author.")
-	b.WriteString("## **Task**: I will provide the output of `git diff --staged`. Your job is to convert it ")
-	b.WriteString("into a concise, informative, and well-structured **SINGLE** Git commit message as plain text, ")
-	b.WriteString("without wrapping it in backticks, quotes, or code blocks")
+	{ // role
+		b.WriteString("## Role\n")
+		b.WriteString("You are an AI assistant specializing in crafting Git commit messages.\n")
 
-	b.WriteString("## **Security**: Never include sensitive data (passwords, API keys, personal information, etc.) or ")
-	b.WriteString("code snippets in the commit message")
-
-	b.WriteString("## **Guidelines**: \n")
-	b.WriteString("### Follow the **Conventional Commit** format: ")
-
-	const (
-		convFormat = "<type>(<scope>): <message>"
-		convDesc   = "  - `<type>`: Choose from 'feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'ci', " +
-			"'chore' (lowercase only).\n" +
-			"  - `<scope>`: (optional but recommended) Specify the affected module (e.g., 'auth', 'api', 'ui'). If the " +
-			"changes span multiple areas, omit this.\n" +
-			"  - `<message>`: Use **imperative tone** (max 72 characters), describe **WHAT** was changed and **WHY**. " +
-			"No periods at the end of the message."
-	)
-
-	if !opt.EnableEmoji {
-		b.WriteString("`" + convFormat + "`\n\n")
-		b.WriteString(convDesc)
-		b.WriteString("\n  **Examples**:\n")
-		b.WriteString("  - `fix(auth): Resolve login token expiration issue`\n" +
-			"  - `feat(api): Add caching to improve response times`\n" +
-			"  - `refactor(ui): Simplify navbar component logic`")
-	} else {
-		b.WriteString("`<emoji> " + convFormat + "`\n\n")
-		b.WriteString("  - `<emoji>`: Use GitMoji to preface the commit. Choose from:\n" +
-			"    - 🐛 fix: Fix a bug\n" +
-			"    - ✨ feat: Introduce new features\n" +
-			"    - 📝 docs: Add or update documentation\n" +
-			"    - 🚀 ci: Deploy-related changes\n" +
-			"    - ✅ test: Add, update, or pass tests\n" +
-			"    - ♻️ refactor: Improve code without changing functionality\n" +
-			"    - ⬆️ chore: Upgrade dependencies\n" +
-			"    - 🔧 chore: Update configuration files\n" +
-			"    - 🌐 chore: Internationalization & localization\n" +
-			"    - 💡 chore: Add or update comments\n" + convDesc)
-		b.WriteString("\n\n  **Examples**:\n\n")
-		b.WriteString("  - `🐛 fix(auth): Resolve login token expiration issue`\n" +
-			"  - `✨ feat(api): Add caching to improve response times`\n" +
-			"  - `♻️ refactor(ui): Simplify navbar component logic`")
+		b.WriteRune('\n')
 	}
 
-	b.WriteString("\n\n")
+	{ // task
+		b.WriteString("## Task\n")
+		b.WriteString("Generate a concise, informative, and well-structured **SINGLE** Git commit ")
+		b.WriteString("message based on the provided input.\n")
 
-	if opt.ShortMessageOnly {
-		b.WriteString(`### Focus on the primary purpose of the commit:
+		b.WriteRune('\n')
+	}
 
-- Summarize all changes in a single, meaningful message.
-- Explain why the changes were made, not just what was modified.`)
+	{ // input
+		b.WriteString("## Input\n")
+		b.WriteString("You will receive:\n")
+		b.WriteString(fmt.Sprintf(
+			"1. The output of `git diff`, showing the staged changes, is wrapped between `%s` and `%s`.\n",
+			ditDiffBegin, gitDiffEnd,
+		))
+		b.WriteString(fmt.Sprintf(
+			"2. The output of `git log`, presenting recent commit history, is wrapped between `%s` and `%s`.\n",
+			gitLogBegin, gitLogEnd,
+		))
+		b.WriteRune('\n')
+	}
 
-		b.WriteString("\n\nExample:\n")
+	{ // output
+		b.WriteString("## Output\n")
+		b.WriteString("Produce a commit message in plain text without wrapping it in backticks, ")
+		b.WriteString("quotes, or code blocks.\n")
+
+		b.WriteRune('\n')
+	}
+
+	{ // guidelines
+		b.WriteString("## Guidelines\n")
+		b.WriteString("### Format\n")
+
+		const (
+			convFormat = "<type>(<scope>): <message>"
+			convDesc   = "- `<type>`: Choose from 'feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', " +
+				"'ci', 'chore'. Carefully analyze **ALL** changes made across all files in the provided diff to " +
+				"determine the primary impact. Use the lowercase form of the type.\n" +
+				"- `<scope>`: (optional but recommended) Specify the affected module (e.g., 'auth', " +
+				"'api', 'ui'). If the changes span multiple areas, omit this.\n" +
+				"- `<message>`: Use **imperative tone** (max 72 characters), describe **WHAT** " +
+				"was changed and **WHY**. No periods at the end of the message.\n"
+		)
+
+		b.WriteString("Follow the Conventional Commit format: `")
 
 		if !opt.EnableEmoji {
-			b.WriteString("feat(api): Add rate-limiting to endpoints")
+			b.WriteString(convFormat)
+			b.WriteString("`\n")
+			b.WriteString(convDesc)
 		} else {
-			b.WriteString(`✨ feat(api): Add rate-limiting to endpoints`)
+			b.WriteString("<emoji> ")
+			b.WriteString(convFormat)
+			b.WriteString("`\n")
+			b.WriteString("- `<emoji>`: Use GitMoji convention to preface the commit. Choose from (emoji, description):\n")
+			b.WriteString("  - 🐛, Fix a bug\n")
+			b.WriteString("  - ✨, Introduce new features\n")
+			b.WriteString("  - 📝, Add or update documentation\n")
+			b.WriteString("  - 🚀, Deploy-related changes\n")
+			b.WriteString("  - ✅, Add, update, or pass tests\n")
+			b.WriteString("  - ♻️, Refactor code\n")
+			b.WriteString("  - ⬆️, Upgrade dependencies\n")
+			b.WriteString("  - 🔧, Add or update configuration files\n")
+			b.WriteString("  - 🌐, Internationalization and localization\n")
+			b.WriteString("  - 💡, Add or update comments in source code\n")
+			b.WriteString(convDesc)
 		}
-	} else {
-		b.WriteString(`### Commit Message Structure:
 
-- **WHAT & WHY**: Focus on summarizing **what** was changed and **why** the change was needed.
-- **Avoid**: Vague messages like "Updated files" or "Fixed bugs". Be specific.
-- **Tense**: Use present tense (Fix, Add, Refactor), not past tense (Fixed, Added).
-- **Format**: The first line should follow the Conventional Commit format, followed by a blank line, and then a
-  detailed description.
-- **No periods**: Keep commit messages clean and concise without period at the end of each line.
+		if !opt.ShortMessageOnly {
+			b.WriteString("### Commit Message Structure\n")
+			b.WriteString("- **WHAT** and **WHY**: Summarize what was changed and why the change was needed.\n")
+			b.WriteString("- **Avoid**: Vague messages like \"Updated files\" or \"Fixed bugs.\" Be specific.\n")
+			b.WriteString("- **Tense**: Use present tense (e.g., Fix, Add, Refactor), not past tense ")
+			b.WriteString("(e.g., Fixed, Added).\n")
+			b.WriteString("- **Format**: The first line should follow the Conventional Commit format, followed ")
+			b.WriteString("by a blank line, then a detailed description if necessary.\n")
+			b.WriteString("- **No periods**: Omit periods at the end of each line.\n")
+			b.WriteString("### Commit Body (if necessary)\n")
+			b.WriteString("- Start with a single-line summary.\n")
+			b.WriteString("- Exclude the provided diff output from the commit message.\n")
+			b.WriteString("- For complex changes, add a detailed description after a blank line:\n")
+			b.WriteString("  - Explain additional context or implementation details.\n")
+			b.WriteString("  - Include a summary and key points when necessary.\n")
+			b.WriteString("  - Avoid excessive detail; provide only what's needed for understanding.\n")
+			b.WriteString("- Avoid starting with \"This commit\"; directly describe the changes.\n")
+		} else {
+			b.WriteString("### Focus on the primary purpose of the commit\n")
+			b.WriteString("- Summarize all changes in a single, meaningful message.\n")
+			b.WriteString("- Explain why the changes were made, not just what was modified.\n")
+		}
 
-### Commit Body (if necessary):
-
-- Start the commit message with a single line summary.
-- Never include the provided diff output in the commit message.
-- If the change is more complex, add a detailed description in bullet points after a blank line.
-  - Explain additional context or implementation details.
-  - Include a **summary** and a list of **key points** when necessary.
-  - Avoid excessive detail – keep it to what is needed for understanding.
-- Don't start it with "This commit", just describe the changes.`)
-
-		b.WriteString("\n\n#### Example:\n\n")
+		b.WriteRune('\n')
+		b.WriteString("**Example**:\n")
+		b.WriteRune('\n')
+		b.WriteString("```\n")
 
 		if opt.EnableEmoji {
 			b.WriteString("✨ ")
 		}
 
-		b.WriteString(`feat(api): Add rate-limiting to endpoints
+		b.WriteString("feat(api): Add rate-limiting to endpoints\n")
 
-Security has been enhanced by implementing rate-limiting on all API endpoints,
-preventing abuse by enforcing request limits. Additionally, Redis has been
-integrated to track API requests, which may be useful for future analytics.
-The configuration can be adjusted via environment variables.
+		if !opt.ShortMessageOnly {
+			b.WriteRune('\n')
+			b.WriteString("Implemented rate-limiting on all API endpoints to enhance security by preventing abuse ")
+			b.WriteString("through request limits. Integrated Redis to track API requests, aiding future analytics. ")
+			b.WriteString("Configuration is adjustable via environment variables.\n")
+			b.WriteRune('\n')
+			b.WriteString("- Enforces request limits to prevent abuse\n")
+			b.WriteString("- Utilizes Redis for tracking API requests\n")
+			b.WriteString("- Configurable through environment variables\n")
+		}
 
-- Prevents abuse by enforcing request limits
-- Uses Redis for tracking API requests
-- Configurable via environment variables`)
+		b.WriteString("```\n")
+
+		b.WriteRune('\n')
+	}
+
+	{ // security
+		b.WriteString("## Security\n")
+		b.WriteString("- Exclude sensitive data (passwords, API keys, personal information, etc.) ")
+		b.WriteString("or code snippets from the commit message.\n")
+
+		b.WriteRune('\n')
+	}
+
+	{ // instructions
+		b.WriteString("## Instructions for the AI\n")
+		b.WriteString("- Analyze the provided `git diff` to understand the current changes.\n")
+		b.WriteString("- Analyze the provided `git log` output to better understand the codebase functionally, ")
+		b.WriteString("features, and recent changes, but do not include this information in the commit message ")
+		b.WriteString("or use it as a template.\n")
+		b.WriteString("- Synthesize this information to generate a commit message that accurately reflects ")
+		b.WriteString("the current changes in the context of the project's history.\n")
 	}
 
 	return b.String()

@@ -21,27 +21,35 @@ func TestGeneratePrompt(t *testing.T) {
 				ai.WithEmoji(false),
 			},
 			wantContains: []string{
-				"Role", "acting as a Git",
-				"Task", "git diff --staged", "convert it", "well-structured **SINGLE** Git commit message",
+				// role
+				"Role", "Git commit messages",
+
+				// task
+				"Task", "well-structured **SINGLE** Git commit", "based on the provided input",
+
+				// input
+				"Input", "will receive", "git diff", "git log",
+
+				// output
+				"Output", "commit message in plain text without wrapping",
+
+				// guidelines
 				"Guidelines",
-				"Conventional Commit",
-				"`<type>(<scope>): <message>`", "fix(auth): Resolve",
-				"Commit Message Structure",
-				"Focus on summarizing", "Vague messages like", "Use present tense",
-				"The first line should follow the Conventional Commit format",
-				"Keep commit messages clean",
-				"without period at the end",
-				"Commit Body",
-				"add a detailed description in bullet points",
-				"Explain additional context",
-				"Include a **summary** and a list",
-				"Avoid excessive detail",
-				"Don't start it with \"This commit\"",
-				"Security", "Never include sensitive data",
+				"Format", "`<type>(<scope>): <message>`", "`<type>`", "`<scope>`", "`<message>`",
+				"Commit Message Structure", "Summarize what was changed", "Use present tense",
+				"Commit Body", "Start with a single-line summary", "Exclude the provided diff", "add a detailed description",
+				"Example", "feat(api): Add rate-limiting to endpoints", "Implemented rate-limiting", "Enforces request limits",
+
+				// security
+				"Security", "Exclude sensitive data", "or code snippets",
+
+				// instructions
+				"Instructions for the AI", "Analyze the provided", "Synthesize this information",
 			},
 			wantNot: []string{
-				"<emoji>", "♻️",
-				"Summarize all changes in a single",
+				// guidelines
+				"<emoji>", "`<emoji>`", "🐛", "✨", "📝", "🚀", "✅", "♻️", "⬆️", "🔧", "🌐", "💡",
+				"Focus on the primary purpose", "Summarize all changes in a single", "Explain why the changes were made",
 			},
 		},
 		"long with emoji": {
@@ -50,31 +58,36 @@ func TestGeneratePrompt(t *testing.T) {
 				ai.WithEmoji(true),
 			},
 			wantContains: []string{
-				"Role", "acting as a Git",
-				"Task", "git diff --staged", "convert it", "well-structured **SINGLE** Git commit message",
+				// role
+				"Role", "Git commit messages",
+
+				// task
+				"Task", "well-structured **SINGLE** Git commit", "based on the provided input",
+
+				// input
+				"Input", "will receive", "git diff", "git log",
+
+				// output
+				"Output", "commit message in plain text without wrapping",
+
+				// guidelines
 				"Guidelines",
-				"Conventional Commit",
-				"`<emoji> <type>(<scope>): <message>`", "🐛 fix(auth): Resolve",
-				"Focus on the primary purpose of the commit",
-				"Summarize all changes in a single",
-				"Explain why the changes were made",
-				"Security", "Never include sensitive data",
+				"Format", "`<emoji> <type>(<scope>): <message>`", "`<emoji>`", "`<type>`", "`<scope>`", "`<message>`",
+				"🐛", "✨", "📝", "🚀", "✅", "♻️", "⬆️", "🔧", "🌐", "💡",
+				"Example", "✨ feat(api): Add rate-limiting to endpoints",
+				"Focus on the primary purpose", "Summarize all changes in a single", "Explain why the changes were made",
+
+				// security
+				"Security", "Exclude sensitive data", "or code snippets",
+
+				// instructions
+				"Instructions for the AI", "Analyze the provided", "Synthesize this information",
 			},
 			wantNot: []string{
-				"`<type>(<scope>): <message>`",
-				"Commit Message Structure",
-				"Focus on summarizing",
-				"Vague messages like",
-				"Use present tense",
-				"The first line should follow the Conventional Commit format",
-				"Keep commit messages clean",
-				"without period at the end",
-				"Commit Body",
-				"add a detailed description in bullet points",
-				"Explain additional context",
-				"Include a **summary** and a list",
-				"Avoid excessive detail",
-				"Don't start it with \"This commit\"",
+				// guidelines
+				"Commit Message Structure", "Summarize what was changed", "Use present tense",
+				"Commit Body", "Start with a single-line summary", "Exclude the provided diff", "add a detailed description",
+				"Implemented rate-limiting", "Enforces request limits",
 			},
 		},
 	} {

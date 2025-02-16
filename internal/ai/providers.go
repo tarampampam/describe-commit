@@ -9,7 +9,7 @@ type (
 	// Provider is an interface for AI providers.
 	Provider interface {
 		// Query the remote provider for the given string.
-		Query(context.Context, string, ...Option) (*Response, error)
+		Query(_ context.Context, changes, commits string, _ ...Option) (*Response, error)
 	}
 
 	// Response is a response from an AI provider.

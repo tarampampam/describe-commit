@@ -41,6 +41,14 @@ var shortMessageOnlyFlag = cli.BoolFlag{
 	OnlyOnce: true,
 }
 
+var commitHistoryLengthFlag = cli.IntFlag{
+	Name:    "commit-history-length",
+	Aliases: []string{"cl", "hl"},
+	Usage:   "number of previous commits from the Git history to consider as context for the AI model (0 = disabled)",
+	Sources: cli.EnvVars("COMMIT_HISTORY_LENGTH"),
+	Value:   20, //nolint:mnd
+}
+
 var enableEmojiFlag = cli.BoolFlag{
 	Name:     "enable-emoji",
 	Aliases:  []string{"e"},

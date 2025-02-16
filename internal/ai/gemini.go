@@ -57,7 +57,7 @@ func NewGemini(apiKey, model string, opt ...GeminiOption) *Gemini {
 	return &p
 }
 
-func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (*Response, error) { //nolint:dupl
+func (p *Gemini) Query(ctx context.Context, changes, commits string, opts ...Option) (*Response, error) { //nolint:dupl
 	var (
 		opt          = options{}.Apply(opts...)
 		instructions = GeneratePrompt(opts...)
@@ -68,7 +68,7 @@ func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (*Resp
 	}
 
 	// https://ai.google.dev/gemini-api/docs/text-generation?lang=rest
-	req, rErr := p.newRequest(ctx, instructions, query, opt)
+	req, rErr := p.newRequest(ctx, instructions, changes, commits, opt)
 	if rErr != nil {
 		return nil, rErr
 	}
@@ -103,7 +103,11 @@ func (p *Gemini) Query(ctx context.Context, query string, opts ...Option) (*Resp
 }
 
 // newRequest creates a new HTTP request for the Gemini API.
-func (p *Gemini) newRequest(ctx context.Context, pr string, q string, o options) (*http.Request, error) { //nolint:funlen,lll
+func (p *Gemini) newRequest( //nolint:funlen
+	ctx context.Context,
+	instructions, changes, commits string,
+	o options,
+) (*http.Request, error) {
 	type (
 		safetySetting struct {
 			Category  string `json:"category"`
@@ -141,7 +145,7 @@ func (p *Gemini) newRequest(ctx context.Context, pr string, q string, o options)
 	data.GenerationConfig.TopP = 0.1
 	data.GenerationConfig.CandidateCount = 1
 
-	data.SystemInstruction.Parts.Text = pr
+	data.SystemInstruction.Parts.Text = instructions
 
 	data.SafetySettings = []safetySetting{
 		{Category: "HARM_CATEGORY_DANGEROUS_CONTENT", Threshold: "BLOCK_LOW_AND_ABOVE"},
@@ -150,7 +154,10 @@ func (p *Gemini) newRequest(ctx context.Context, pr string, q string, o options)
 		{Category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", Threshold: "BLOCK_LOW_AND_ABOVE"},
 	}
 
-	data.Contents = []content{{Parts: []contentPart{{Text: q}}}}
+	data.Contents = []content{{Parts: []contentPart{
+		{Text: wrapChanges(changes)},
+		{Text: wrapCommits(commits)},
+	}}}
 
 	j, jErr := json.Marshal(data)
 	if jErr != nil {
