@@ -56,7 +56,7 @@ func NewOpenAI(apiKey, model string, opt ...OpenAIOption) *OpenAI {
 	return &p
 }
 
-func (p *OpenAI) Query(ctx context.Context, query string, opts ...Option) (*Response, error) { //nolint:dupl
+func (p *OpenAI) Query(ctx context.Context, changes, commits string, opts ...Option) (*Response, error) { //nolint:dupl
 	var (
 		opt          = options{}.Apply(opts...)
 		instructions = GeneratePrompt(opts...)
@@ -66,7 +66,7 @@ func (p *OpenAI) Query(ctx context.Context, query string, opts ...Option) (*Resp
 		opt.MaxOutputTokens = defaultMaxOutputTokens // set default value
 	}
 
-	req, rErr := p.newRequest(ctx, instructions, query, opt)
+	req, rErr := p.newRequest(ctx, instructions, changes, commits, opt)
 	if rErr != nil {
 		return nil, rErr
 	}
@@ -101,7 +101,11 @@ func (p *OpenAI) Query(ctx context.Context, query string, opts ...Option) (*Resp
 }
 
 // newRequest creates a new HTTP request for the OpenAI API.
-func (p *OpenAI) newRequest(ctx context.Context, pr string, q string, o options) (*http.Request, error) {
+func (p *OpenAI) newRequest(
+	ctx context.Context,
+	instructions, changes, commits string,
+	o options,
+) (*http.Request, error) {
 	type message struct {
 		Role    string `json:"role"`
 		Content string `json:"content"`
@@ -125,8 +129,9 @@ func (p *OpenAI) newRequest(ctx context.Context, pr string, q string, o options)
 	data.HowMany = 1
 	data.MaxCompletionTokens = o.MaxOutputTokens
 
-	data.Messages = append(data.Messages, message{Role: "system", Content: pr})
-	data.Messages = append(data.Messages, message{Role: "user", Content: q})
+	data.Messages = append(data.Messages, message{Role: "system", Content: instructions})
+	data.Messages = append(data.Messages, message{Role: "user", Content: wrapChanges(changes)})
+	data.Messages = append(data.Messages, message{Role: "user", Content: wrapCommits(commits)})
 
 	j, jErr := json.Marshal(data)
 	if jErr != nil {

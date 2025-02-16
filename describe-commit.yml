@@ -12,6 +12,11 @@
 # @type {boolean}
 shortMessageOnly: false
 
+# How many previous commits from the Git history should be considered as context for the AI model?
+# Set to 0 to disable this feature.
+# @type {integer}
+commitHistoryLength: 15
+
 # Enable emoji in the commit message
 # @type {boolean}
 enableEmoji: false

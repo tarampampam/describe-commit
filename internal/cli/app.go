@@ -9,10 +9,11 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v3"
+	"golang.org/x/sync/errgroup"
 
 	"gh.tarampamp.am/describe-commit/internal/ai"
 	"gh.tarampamp.am/describe-commit/internal/config"
-	"gh.tarampamp.am/describe-commit/internal/diff"
+	"gh.tarampamp.am/describe-commit/internal/git"
 	"gh.tarampamp.am/describe-commit/internal/version"
 )
 
@@ -22,9 +23,10 @@ type cliApp struct {
 	c *cli.Command
 
 	options struct {
-		ShortMessageOnly option[bool]
-		EnableEmoji      option[bool]
-		MaxOutputTokens  option[int64]
+		ShortMessageOnly    option[bool]
+		CommitHistoryLength option[int64]
+		EnableEmoji         option[bool]
+		MaxOutputTokens     option[int64]
 
 		AIProviderName option[string]
 
@@ -53,6 +55,7 @@ func NewApp() *cli.Command { //nolint:funlen,gocognit
 		Flags: []cli.Flag{
 			&configFilePathFlag,
 			&shortMessageOnlyFlag,
+			&commitHistoryLengthFlag,
 			&enableEmojiFlag,
 			&maxOutputTokensFlag,
 			&aiProviderNameFlag,
@@ -70,6 +73,7 @@ func NewApp() *cli.Command { //nolint:funlen,gocognit
 
 					if err := cfg.FromFile(c.String(configFilePathFlag.Name)); err == nil {
 						opt.ShortMessageOnly.SetIfNotNil(cfg.ShortMessageOnly)
+						opt.CommitHistoryLength.SetIfNotNil(cfg.CommitHistoryLength)
 						opt.EnableEmoji.SetIfNotNil(cfg.EnableEmoji)
 						opt.MaxOutputTokens.SetIfNotNil(cfg.MaxOutputTokens)
 						opt.AIProviderName.SetIfNotNil(cfg.AIProviderName)
@@ -90,6 +94,7 @@ func NewApp() *cli.Command { //nolint:funlen,gocognit
 
 				{ // next, override the options with the command-line flags or use their default values if they are not provided
 					opt.ShortMessageOnly.SetFromFlagIfUnset(c, shortMessageOnlyFlag.Name, c.Bool)
+					opt.CommitHistoryLength.SetFromFlagIfUnset(c, commitHistoryLengthFlag.Name, c.Int)
 					opt.EnableEmoji.SetFromFlagIfUnset(c, enableEmojiFlag.Name, c.Bool)
 					opt.MaxOutputTokens.SetFromFlagIfUnset(c, maxOutputTokensFlag.Name, c.Int)
 					opt.AIProviderName.SetFromFlagIfUnset(c, aiProviderNameFlag.Name, c.String)
@@ -143,7 +148,7 @@ func NewApp() *cli.Command { //nolint:funlen,gocognit
 	return app.c
 }
 
-func (app *cliApp) Run(ctx context.Context, workingDir string) error {
+func (app *cliApp) Run(ctx context.Context, workingDir string) error { //nolint:funlen
 	debugf("AI provider: %s", app.options.AIProviderName.Value)
 
 	var provider ai.Provider
@@ -165,12 +170,25 @@ func (app *cliApp) Run(ctx context.Context, workingDir string) error {
 
 	debugf("working directory: %s", workingDir)
 
-	changes, cErr := diff.Git(workingDir)
-	if cErr != nil {
-		return cErr
+	var (
+		eg, egCtx        = errgroup.WithContext(ctx)
+		changes, commits string
+	)
+
+	eg.Go(func() (err error) { changes, err = git.Diff(egCtx, workingDir); return }) //nolint:nlreturn
+
+	if histLen := int(app.options.CommitHistoryLength.Value); histLen > 0 {
+		eg.Go(func() (err error) { commits, err = git.Log(egCtx, workingDir, histLen); return }) //nolint:nlreturn
+	} else {
+		commits = "NO COMMITS"
+	}
+
+	if err := eg.Wait(); err != nil {
+		return err
 	}
 
 	debugf("changes:\n%s", changes)
+	debugf("commits:\n%s", commits)
 
 	if changes == "" {
 		return fmt.Errorf("no changes found in %s (probably nothing staged; try `git add -A`)", workingDir)
@@ -179,6 +197,7 @@ func (app *cliApp) Run(ctx context.Context, workingDir string) error {
 	response, respErr := provider.Query(
 		ctx,
 		changes,
+		commits,
 		ai.WithShortMessageOnly(app.options.ShortMessageOnly.Value),
 		ai.WithEmoji(app.options.EnableEmoji.Value),
 		ai.WithMaxOutputTokens(app.options.MaxOutputTokens.Value),

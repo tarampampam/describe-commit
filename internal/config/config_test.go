@@ -25,6 +25,7 @@ func TestConfig_FromFile(t *testing.T) {
 		"full config": {
 			giveContent: `
 shortMessageOnly: true
+commitHistoryLength: 312312
 enableEmoji: false
 maxOutputTokens: 123123123
 aiProvider: foobar
@@ -36,6 +37,7 @@ openai:
   modelName: <openai-model-name>`,
 			wantStruct: func() (c config.Config) {
 				c.ShortMessageOnly = toPtr(true)
+				c.CommitHistoryLength = toPtr[int64](312312)
 				c.EnableEmoji = toPtr(false)
 				c.MaxOutputTokens = toPtr[int64](123123123)
 				c.AIProviderName = toPtr("foobar")

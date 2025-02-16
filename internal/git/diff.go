@@ -1,21 +1,22 @@
-package diff
+package git
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os/exec"
-	"strings"
 )
 
-func Git(dirPath string) (string, error) {
+// Diff returns the diff of the staged changes or changes between the index and the working tree.
+func Diff(ctx context.Context, dirPath string) (string, error) {
 	// ensure git is installed and available to run
-	gitFilePath, lookErr := exec.LookPath("git")
+	gitFilePath, lookErr := binPath()
 	if lookErr != nil {
-		return "", fmt.Errorf("git not found: %w", lookErr)
+		return "", lookErr
 	}
 
 	// get the diff
-	var cmd = exec.Command(gitFilePath, "diff",
+	var cmd = exec.CommandContext(ctx, gitFilePath, "diff",
 		"--cached",                 // show all staged changes or changes between the index and the working tree
 		"--ignore-submodules=all",  // ignore changes to submodules
 		"--diff-algorithm=minimal", // use the minimal diff algorithm
@@ -46,17 +47,7 @@ func Git(dirPath string) (string, error) {
 
 	if err := cmd.Run(); err != nil {
 		if stdErr.Len() > 0 {
-			var lines = strings.Split(stdErr.String(), "\n")
-
-			// remove empty lines
-			for i := 0; i < len(lines); i++ {
-				if len(strings.TrimSpace(lines[i])) == 0 {
-					lines = append(lines[:i], lines[i+1:]...)
-					i--
-				}
-			}
-
-			err = fmt.Errorf("%s: %w", strings.Join(lines, "; "), err)
+			err = fmt.Errorf("%s: %w", stdErrToString(stdErr.String()), err)
 		}
 
 		return "", fmt.Errorf("git diff failed: %w", err)
