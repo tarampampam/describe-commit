@@ -37,6 +37,11 @@ func Diff(ctx context.Context, dirPath string) (string, error) {
 	)
 
 	cmd.Dir = dirPath
+	cmd.Env = []string{
+		"LC_ALL=C", "LANG=C", // forces the system to use the "C" (POSIX) locale, English-based output with no localization
+		"NO_COLOR=1",            // disables colored output
+		"GIT_CONFIG_NOSYSTEM=1", // do not use the system-wide configuration file
+	}
 
 	var stdOut, stdErr bytes.Buffer
 

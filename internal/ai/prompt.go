@@ -6,13 +6,13 @@ import (
 )
 
 const (
-	ditDiffBegin, gitDiffEnd = "[---GIT-DIFF-BEGIN---]", "[---GIT-DIFF-END---]"
+	gitDiffBegin, gitDiffEnd = "[---GIT-DIFF-BEGIN---]", "[---GIT-DIFF-END---]"
 	gitLogBegin, gitLogEnd   = "[---GIT-LOG-BEGIN---]", "[---GIT-LOG-END---]"
 )
 
 // wrapChanges wraps the provided diff output between the specified markers (to help the AI identify the changes).
 func wrapChanges(diff string) string {
-	return fmt.Sprintf("%s\n%s\n%s", ditDiffBegin, diff, gitDiffEnd)
+	return fmt.Sprintf("%s\n%s\n%s", gitDiffBegin, diff, gitDiffEnd)
 }
 
 // wrapCommits wraps the provided log output between the specified markers (to help the AI too).
@@ -48,7 +48,7 @@ func GeneratePrompt(opts ...Option) string { //nolint:funlen
 		b.WriteString("You will receive:\n")
 		b.WriteString(fmt.Sprintf(
 			"1. The output of `git diff`, showing the staged changes, is wrapped between `%s` and `%s`.\n",
-			ditDiffBegin, gitDiffEnd,
+			gitDiffBegin, gitDiffEnd,
 		))
 		b.WriteString(fmt.Sprintf(
 			"2. The output of `git log`, presenting recent commit history, is wrapped between `%s` and `%s`.\n",
