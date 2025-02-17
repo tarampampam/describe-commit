@@ -34,13 +34,13 @@ Without any manual effort (there's no time to write commit messages, lazy develo
 - Supports different AI providers
 - Can generate short commit messages (subject line only)
 - Optionally includes emojis (🐛✨📝🚀✅♻️⬆️🔧🌐💡) in commit messages
-- Runs as a standalone binary (no external dependencies)
+- Runs as a standalone binary (only installed `git` is required)
 - Available as a **Docker image**
 
 > [!NOTE]
 > Under the hood, this app does two things before returning the generated commit message:
 >
-> - Retrieves the `git diff` for the specified directory
+> - Retrieves the `git diff` (and `git log` optionally) for the specified directory
 > - Sends this diff to the AI provider with the provided special prompt
 >
 > Please keep in mind that when working with proprietary code, some parts of the code will be sent to the AI
