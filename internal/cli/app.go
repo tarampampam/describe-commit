@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -12,10 +13,216 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"gh.tarampamp.am/describe-commit/internal/ai"
+	"gh.tarampamp.am/describe-commit/internal/cli/app"
 	"gh.tarampamp.am/describe-commit/internal/config"
 	"gh.tarampamp.am/describe-commit/internal/git"
 	"gh.tarampamp.am/describe-commit/internal/version"
 )
+
+type App struct {
+	c app.Command
+
+	options struct {
+		ConfigFilePath option2[string]
+
+		ShortMessageOnly    option2[bool]
+		CommitHistoryLength option2[int64]
+		EnableEmoji         option2[bool]
+		MaxOutputTokens     option2[int64]
+
+		AIProviderName option2[string]
+
+		Providers struct {
+			Gemini struct {
+				ApiKey    option2[string]
+				ModelName option2[string]
+			}
+
+			OpenAI struct {
+				ApiKey    option2[string]
+				ModelName option2[string]
+			}
+		}
+	}
+}
+
+type option2[T string | bool | int64] struct {
+	FromFlag, FromConfig T // the list of sources from which the value can be set
+}
+
+func (o *option2[T]) SetFromConfigIfNotNil(v *T) {
+	if v != nil {
+		o.FromConfig = *v
+	}
+}
+
+func (o *option2[T]) Get() T {
+	var empty T
+
+	// flags have a higher priority than the configuration file
+	if o.FromFlag != empty {
+		return o.FromFlag
+	}
+
+	return o.FromConfig
+}
+
+func NewApp2(name string) *App {
+	var a = App{c: app.Command{Name: name}}
+
+	a.c.Flags = []app.Flagger{
+		&app.Flag[string]{
+			Names:   []string{"config-file", "c"},
+			Usage:   "Path to the configuration file",
+			EnvVars: []string{"CONFIG_FILE"},
+			Default: func() string { // default file path depends on the user's OS
+				const fileName = "describe-commit.yml"
+
+				if dir, err := os.UserConfigDir(); err == nil {
+					return filepath.Join(dir, fileName)
+				}
+
+				if cwd, err := os.Getwd(); err == nil {
+					return filepath.Join(cwd, fileName)
+				}
+
+				return filepath.Join(".", fileName)
+			}(),
+			Value: &a.options.ConfigFilePath.FromFlag,
+		},
+		&app.Flag[bool]{
+			Names:   []string{"short-message-only", "s"},
+			Usage:   "Generate a short commit message (subject line) only",
+			EnvVars: []string{"SHORT_MESSAGE_ONLY"},
+			Value:   &a.options.ShortMessageOnly.FromFlag,
+		},
+		&app.Flag[int64]{
+			Names:   []string{"commit-history-length", "cl", "hl"},
+			Usage:   "Number of previous commits from the Git history (0 = disabled)",
+			EnvVars: []string{"COMMIT_HISTORY_LENGTH"},
+			Default: 20, //nolint:mnd
+			Value:   &a.options.CommitHistoryLength.FromFlag,
+		},
+		&app.Flag[bool]{
+			Names:   []string{"enable-emoji", "e"},
+			Usage:   "Enable emoji in the commit message",
+			EnvVars: []string{"ENABLE_EMOJI"},
+			Value:   &a.options.EnableEmoji.FromFlag,
+		},
+		&app.Flag[int64]{
+			Names:   []string{"max-output-tokens"},
+			Usage:   "Maximum number of tokens in the output message",
+			EnvVars: []string{"MAX_OUTPUT_TOKENS"},
+			Default: 500, //nolint:mnd
+			Value:   &a.options.MaxOutputTokens.FromFlag,
+		},
+		&app.Flag[string]{
+			Names:   []string{"ai-provider", "ai"},
+			Usage:   fmt.Sprintf("AI provider name (%s)", strings.Join(ai.SupportedProviders(), "|")),
+			EnvVars: []string{"AI_PROVIDER"},
+			Default: ai.ProviderGemini, // due to its free
+			Validator: func(_ *app.Command, s string) error {
+				if !ai.IsProviderSupported(s) {
+					return fmt.Errorf("unsupported AI provider: %s", s)
+				}
+
+				return nil
+			},
+			Value: &a.options.AIProviderName.FromFlag,
+		},
+		&app.Flag[string]{
+			Names:   []string{"gemini-api-key", "ga"},
+			Usage:   "Gemini API key (https://bit.ly/4jZhiKI, as of February 2025 it's free)",
+			EnvVars: []string{"GEMINI_API_KEY"},
+			Value:   &a.options.Providers.Gemini.ApiKey.FromFlag,
+		},
+		&app.Flag[string]{
+			Names:   []string{"gemini-model-name", "gm"},
+			Usage:   "Gemini model name (https://bit.ly/4i02ARR)",
+			EnvVars: []string{"GEMINI_MODEL_NAME"},
+			Default: "gemini-2.0-flash",
+			Value:   &a.options.Providers.Gemini.ApiKey.FromFlag,
+		},
+		&app.Flag[string]{
+			Names:   []string{"openai-api-key", "oa"},
+			Usage:   "OpenAI API key (https://bit.ly/4i03NbR, you need to add funds to your account)",
+			EnvVars: []string{"OPENAI_API_KEY"},
+			Value:   &a.options.Providers.OpenAI.ApiKey.FromFlag,
+		},
+		&app.Flag[string]{
+			Names:   []string{"openai-model-name", "om"},
+			Usage:   "OpenAI model name (https://bit.ly/4hXCXkL)",
+			EnvVars: []string{"OPENAI_MODEL_NAME"},
+			Default: "gpt-4o-mini",
+			Value:   &a.options.Providers.Gemini.ModelName.FromFlag,
+		},
+	}
+
+	a.c.Action = func(ctx context.Context, c *app.Command) error {
+		var (
+			opt = &a.options
+			cfg = new(config.Config)
+		)
+
+		if err := cfg.FromFile(a.options.ConfigFilePath.FromFlag); err == nil {
+			opt.ShortMessageOnly.SetFromConfigIfNotNil(cfg.ShortMessageOnly)
+			opt.CommitHistoryLength.SetFromConfigIfNotNil(cfg.CommitHistoryLength)
+			opt.EnableEmoji.SetFromConfigIfNotNil(cfg.EnableEmoji)
+			opt.MaxOutputTokens.SetFromConfigIfNotNil(cfg.MaxOutputTokens)
+			opt.AIProviderName.SetFromConfigIfNotNil(cfg.AIProviderName)
+
+			if sub := cfg.Gemini; sub != nil {
+				opt.Providers.Gemini.ApiKey.SetFromConfigIfNotNil(sub.ApiKey)
+				opt.Providers.Gemini.ModelName.SetFromConfigIfNotNil(sub.ModelName)
+			}
+
+			if sub := cfg.OpenAI; sub != nil {
+				opt.Providers.OpenAI.ApiKey.SetFromConfigIfNotNil(sub.ApiKey)
+				opt.Providers.OpenAI.ModelName.SetFromConfigIfNotNil(sub.ModelName)
+			}
+		} else {
+			debugf("failed to load the configuration file: %s", err)
+		}
+
+		{ // validate the options
+			if opt.MaxOutputTokens.Get() <= 1 {
+				return errors.New("max output tokens must be greater than 1")
+			}
+
+			if v := opt.AIProviderName.Get(); !ai.IsProviderSupported(v) {
+				return fmt.Errorf("unsupported AI provider: %s", v)
+			}
+
+			if opt.AIProviderName.Get() == ai.ProviderGemini {
+				if opt.Providers.Gemini.ApiKey.Get() == "" {
+					return errors.New("gemini API key is required")
+				}
+
+				if opt.Providers.Gemini.ModelName.Get() == "" {
+					return errors.New("gemini model name is required")
+				}
+			}
+
+			if opt.AIProviderName.Get() == ai.ProviderOpenAI {
+				if opt.Providers.OpenAI.ApiKey.Get() == "" {
+					return errors.New("OpenAI API key is required")
+				}
+
+				if opt.Providers.OpenAI.ModelName.Get() == "" {
+					return errors.New("OpenAI model name is required")
+				}
+			}
+		}
+
+		fmt.Printf("%+v\n", a.options)
+
+		return nil
+	}
+
+	return &a
+}
+
+func (a *App) Run(ctx context.Context, args []string) error { return a.c.Run(ctx, args) }
 
 //go:generate go run app_readme.go
 
