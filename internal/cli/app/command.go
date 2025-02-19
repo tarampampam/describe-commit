@@ -11,15 +11,13 @@ import (
 	"unicode/utf8"
 )
 
-type (
-	Command struct {
-		Name    string
-		Version string
-		Output  io.Writer
-		Flags   []Flagger
-		Action  func(context.Context, *Command) error
-	}
-)
+type Command struct {
+	Name    string
+	Version string
+	Output  io.Writer
+	Flags   []Flagger
+	Action  func(context.Context, *Command) error
+}
 
 func (c *Command) Help() string {
 	const offset = "   "
@@ -94,33 +92,19 @@ func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funle
 		c.Output = os.Stdout
 	}
 
+	var showHelp, showVersion FlagValue[bool]
+
 	// append "built-in" flags
 	c.Flags = append(c.Flags, []Flagger{
 		&Flag[bool]{
 			Names: []string{"help", "h"},
 			Usage: "Show help",
-			Action: func(c *Command, _ bool) (err error) {
-				_, err = fmt.Fprintf(c.Output, "%s\n", c.Help())
-
-				return
-			},
+			Value: &showHelp,
 		},
 		&Flag[bool]{
 			Names: []string{"version", "v"},
 			Usage: "Print the version",
-			Action: func(c *Command, _ bool) (err error) {
-				var out string
-
-				if c.Version != "" {
-					out = fmt.Sprintf("%s (%s)\n", c.Version, runtime.Version())
-				} else {
-					out = fmt.Sprintf("unknown (%s)\n", runtime.Version())
-				}
-
-				_, err = fmt.Fprint(c.Output, out)
-
-				return
-			},
+			Value: &showVersion,
 		},
 	}...)
 
@@ -136,6 +120,28 @@ func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funle
 		if _, outErr := fmt.Fprintf(c.Output, "%s\n\n", c.Help()); outErr != nil {
 			err = fmt.Errorf("%w: %w", outErr, err)
 		}
+
+		return err
+	}
+
+	// if help flag is set then show the help and exit (before flags validation and other actions)
+	if showHelp.V {
+		_, err := fmt.Fprintf(c.Output, "%s\n", c.Help())
+
+		return err
+	} else if showVersion.V { // and the same for the version flag
+		var (
+			runtimeVersion = runtime.Version()
+			out            string
+		)
+
+		if c.Version != "" {
+			out = fmt.Sprintf("%s (%s)\n", c.Version, runtimeVersion)
+		} else {
+			out = fmt.Sprintf("unknown (%s)\n", runtimeVersion)
+		}
+
+		_, err := fmt.Fprint(c.Output, out)
 
 		return err
 	}
