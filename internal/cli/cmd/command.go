@@ -1,4 +1,4 @@
-package app
+package cmd
 
 import (
 	"context"
@@ -16,7 +16,9 @@ type Command struct {
 	Version string
 	Output  io.Writer
 	Flags   []Flagger
-	Action  func(context.Context, *Command) error
+	Action  func(_ context.Context, _ *Command, args []string) error
+
+	runOnce bool
 }
 
 func (c *Command) Help() string {
@@ -82,6 +84,12 @@ func (c *Command) Help() string {
 }
 
 func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funlen
+	defer func() { c.runOnce = true }()
+
+	if c.runOnce {
+		return fmt.Errorf("command %q has already been run", c.Name)
+	}
+
 	var set = flag.NewFlagSet(c.Name, flag.ContinueOnError)
 
 	// mute everything from the standard library
@@ -92,7 +100,7 @@ func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funle
 		c.Output = os.Stdout
 	}
 
-	var showHelp, showVersion FlagValue[bool]
+	var showHelp, showVersion bool
 
 	// append "built-in" flags
 	c.Flags = append(c.Flags, []Flagger{
@@ -125,11 +133,11 @@ func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funle
 	}
 
 	// if help flag is set then show the help and exit (before flags validation and other actions)
-	if showHelp.V {
+	if showHelp {
 		_, err := fmt.Fprintf(c.Output, "%s\n", c.Help())
 
 		return err
-	} else if showVersion.V { // and the same for the version flag
+	} else if showVersion { // and the same for the version flag
 		var (
 			runtimeVersion = runtime.Version()
 			out            string
@@ -163,7 +171,7 @@ func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funle
 
 	// run the "main" action, if set
 	if c.Action != nil {
-		return c.Action(ctx, c)
+		return c.Action(ctx, c, set.Args())
 	}
 
 	return nil

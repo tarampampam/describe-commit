@@ -1,4 +1,4 @@
-package app
+package cmd
 
 import (
 	"errors"
@@ -33,18 +33,17 @@ type (
 	}
 
 	Flag[T FlagType] struct {
-		Names     []string                // e.g. "config-file", "c"
-		Usage     string                  // e.g. "path to the configuration file"
-		Default   T                       // default value
-		EnvVars   []string                // e.g. "CONFIG_FILE"
-		Validator func(*Command, T) error // value validation function
-		Action    func(*Command, T) error // an action to run when the flag is set
-		Value     *FlagValue[T]           // the actual value will be put here after parsing
-	}
+		Names        []string                // e.g. "config-file", "c"
+		Usage        string                  // e.g. "path to the configuration file"
+		Default      T                       // default value
+		EnvVars      []string                // e.g. "CONFIG_FILE"
+		Validator    func(*Command, T) error // value validation function
+		Action       func(*Command, T) error // an action to run when the flag is set
+		ValueSetFrom flagValueSource         // the source of the value (from where the value was taken)
 
-	FlagValue[T FlagType] struct {
-		Source flagValueSource // the source of the value (from where the value was taken)
-		V      T               // the value
+		// the actual value will be placed here after parsing.
+		// a pointer is used to allow the value to be set externally
+		Value *T
 	}
 )
 
@@ -62,10 +61,10 @@ var ( // ensure that Flag[T] implements Flagger
 type flagValueSource = byte
 
 const (
-	FlagValueSourceNone flagValueSource = iota
-	FlagValueSourceDefault
-	FlagValueSourceEnv
-	FlagValueSourceFlag
+	FlagValueSourceNone    flagValueSource = iota // not set
+	FlagValueSourceDefault                        // set from the default value
+	FlagValueSourceEnv                            // set from the environment variable
+	FlagValueSourceFlag                           // set from the flag value (command line argument)
 )
 
 func (f *Flag[T]) IsSet() bool {
@@ -73,11 +72,12 @@ func (f *Flag[T]) IsSet() bool {
 		return false // uninitialized flag
 	}
 
-	if f.Value.Source == FlagValueSourceNone {
+	switch f.ValueSetFrom {
+	case FlagValueSourceNone, FlagValueSourceDefault:
 		return false
+	default:
+		return *f.Value != f.Default
 	}
-
-	return f.Value.V != f.Default
 }
 
 func (f *Flag[T]) Help() (names string, usage string) {
@@ -98,7 +98,7 @@ func (f *Flag[T]) Help() (names string, usage string) {
 
 		b.WriteString(name)
 
-		if _, ok := any(f.Value).(*bool); !ok {
+		if _, ok := any(*new(T)).(bool); !ok {
 			b.WriteString(`="…"`)
 		}
 	}
@@ -134,7 +134,7 @@ func (f *Flag[T]) Help() (names string, usage string) {
 
 // parseString parses the string value and returns the value of the generic type.
 func (f *Flag[T]) parseString(s string) (T, error) {
-	var empty T
+	var empty T // readonly value
 
 	switch any(empty).(type) {
 	case bool:
@@ -220,16 +220,13 @@ func (f *Flag[T]) envValue() (value T, found bool, envName string, _ error) {
 
 func (f *Flag[T]) setValue(v T, src flagValueSource) {
 	if f.Value == nil {
-		f.Value = new(FlagValue[T])
+		f.Value = new(T)
 	}
 
-	f.Value.V = v
-	f.Value.Source = src
+	*f.Value, f.ValueSetFrom = v, src
 }
 
-func (f *Flag[T]) Apply(s *flag.FlagSet) error { //nolint:gocognit,gocyclo,funlen
-	var empty T // readonly value
-
+func (f *Flag[T]) Apply(s *flag.FlagSet) error {
 	// set the default flag value
 	f.setValue(f.Default, FlagValueSourceDefault)
 
@@ -243,13 +240,13 @@ func (f *Flag[T]) Apply(s *flag.FlagSet) error { //nolint:gocognit,gocyclo,funle
 		envParsingErr = fmt.Errorf("failed to parse the environment variable %s: %w", envName, err)
 	}
 
-	switch any(empty).(type) {
+	switch any(*new(T)).(type) {
 	case bool:
 		var fn = func(string) error {
+
 			// since we have a boolean flag, we need to set the value to true if the flag was provided
-			// without taking into account the value. also, to avoid unnecessary type checks, we simply
-			// invert the default bool value (false -> true) and set it.
-			f.setValue(!empty, FlagValueSourceEnv)
+			// without taking into account the value
+			f.setValue(any(true).(T), FlagValueSourceFlag)
 
 			return envParsingErr
 		}
@@ -292,7 +289,7 @@ func (f *Flag[T]) Validate(c *Command) error {
 		return errors.New("flag value is nil")
 	}
 
-	return f.Validator(c, f.Value.V)
+	return f.Validator(c, *f.Value)
 }
 
 func (f *Flag[T]) RunAction(c *Command) error {
@@ -304,5 +301,5 @@ func (f *Flag[T]) RunAction(c *Command) error {
 		return errors.New("flag value is nil")
 	}
 
-	return f.Action(c, f.Value.V)
+	return f.Action(c, *f.Value)
 }
