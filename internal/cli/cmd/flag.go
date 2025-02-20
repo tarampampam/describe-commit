@@ -108,9 +108,12 @@ func (f *Flag[T]) Help() (names string, usage string) {
 	b.Reset()
 
 	b.WriteString(f.Usage)
-	b.WriteString(" (default: ")
-	b.WriteString(fmt.Sprintf("%v", f.Default))
-	b.WriteRune(')')
+
+	if empty := *new(T); f.Default != empty {
+		b.WriteString(" (default: ")
+		b.WriteString(fmt.Sprintf("%v", f.Default))
+		b.WriteRune(')')
+	}
 
 	if len(f.EnvVars) > 0 {
 		b.WriteString(" [")

@@ -5,38 +5,22 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
-
-	"golang.org/x/sync/errgroup"
 
 	"gh.tarampamp.am/describe-commit/internal/ai"
 	"gh.tarampamp.am/describe-commit/internal/cli/cmd"
 	"gh.tarampamp.am/describe-commit/internal/config"
+	"gh.tarampamp.am/describe-commit/internal/errgroup"
 	"gh.tarampamp.am/describe-commit/internal/git"
 	"gh.tarampamp.am/describe-commit/internal/version"
 )
 
-type (
-	App struct {
-		cmd cmd.Command
+//go:generate go run app_readme.go
 
-		opt options
-	}
-
-	options struct {
-		ShortMessageOnly    bool
-		CommitHistoryLength int64
-		EnableEmoji         bool
-		MaxOutputTokens     int64
-		AIProviderName      string
-
-		Providers struct {
-			Gemini struct{ ApiKey, ModelName string }
-			OpenAI struct{ ApiKey, ModelName string }
-		}
-	}
-)
+type App struct {
+	cmd cmd.Command
+	opt options
+}
 
 func NewApp(name string) *App {
 	var app = App{
@@ -44,56 +28,52 @@ func NewApp(name string) *App {
 			Name:    name,
 			Version: version.Version(),
 		},
+		opt: newOptionsWithDefaults(),
 	}
-
-	// set default options
 
 	var (
 		configFile = cmd.Flag[string]{
 			Names:   []string{"config-file", "c"},
 			Usage:   "Path to the configuration file",
 			EnvVars: []string{"CONFIG_FILE"},
-			Default: func() string { // default file path depends on the user's OS
-				const fileName = "describe-commit.yml"
-
-				if dir, err := os.UserConfigDir(); err == nil {
-					return filepath.Join(dir, fileName)
-				}
-
-				if cwd, err := os.Getwd(); err == nil {
-					return filepath.Join(cwd, fileName)
-				}
-
-				return filepath.Join(".", fileName)
-			}(),
+			Default: app.opt.ConfigFilePath,
 		}
 		shortMessageOnly = cmd.Flag[bool]{
 			Names:   []string{"short-message-only", "s"},
 			Usage:   "Generate a short commit message (subject line) only",
 			EnvVars: []string{"SHORT_MESSAGE_ONLY"},
+			Default: app.opt.ShortMessageOnly,
 		}
 		commitHistoryLength = cmd.Flag[int64]{
 			Names:   []string{"commit-history-length", "cl", "hl"},
 			Usage:   "Number of previous commits from the Git history (0 = disabled)",
 			EnvVars: []string{"COMMIT_HISTORY_LENGTH"},
-			Default: 20, //nolint:mnd
+			Default: app.opt.CommitHistoryLength,
 		}
 		enableEmoji = cmd.Flag[bool]{
 			Names:   []string{"enable-emoji", "e"},
 			Usage:   "Enable emoji in the commit message",
 			EnvVars: []string{"ENABLE_EMOJI"},
+			Default: app.opt.EnableEmoji,
 		}
 		maxOutputTokens = cmd.Flag[int64]{
 			Names:   []string{"max-output-tokens"},
 			Usage:   "Maximum number of tokens in the output message",
 			EnvVars: []string{"MAX_OUTPUT_TOKENS"},
-			Default: 500, //nolint:mnd
+			Validator: func(_ *cmd.Command, i int64) error {
+				if i <= 1 {
+					return errors.New("max output tokens must be greater than 1")
+				}
+
+				return nil
+			},
+			Default: app.opt.MaxOutputTokens,
 		}
 		aiProviderName = cmd.Flag[string]{
 			Names:   []string{"ai-provider", "ai"},
 			Usage:   fmt.Sprintf("AI provider name (%s)", strings.Join(ai.SupportedProviders(), "|")),
 			EnvVars: []string{"AI_PROVIDER"},
-			Default: ai.ProviderGemini, // due to its free
+			Default: app.opt.AIProviderName,
 			Validator: func(_ *cmd.Command, s string) error {
 				if !ai.IsProviderSupported(s) {
 					return fmt.Errorf("unsupported AI provider: %s", s)
@@ -106,23 +86,25 @@ func NewApp(name string) *App {
 			Names:   []string{"gemini-api-key", "ga"},
 			Usage:   "Gemini API key (https://bit.ly/4jZhiKI, as of February 2025 it's free)",
 			EnvVars: []string{"GEMINI_API_KEY"},
+			Default: app.opt.Providers.Gemini.ApiKey,
 		}
 		geminiModelName = cmd.Flag[string]{
 			Names:   []string{"gemini-model-name", "gm"},
 			Usage:   "Gemini model name (https://bit.ly/4i02ARR)",
 			EnvVars: []string{"GEMINI_MODEL_NAME"},
-			Default: "gemini-2.0-flash",
+			Default: app.opt.Providers.Gemini.ModelName,
 		}
 		openAIApiKey = cmd.Flag[string]{
 			Names:   []string{"openai-api-key", "oa"},
 			Usage:   "OpenAI API key (https://bit.ly/4i03NbR, you need to add funds to your account)",
 			EnvVars: []string{"OPENAI_API_KEY"},
+			Default: app.opt.Providers.OpenAI.ApiKey,
 		}
 		openAIModelName = cmd.Flag[string]{
 			Names:   []string{"openai-model-name", "om"},
 			Usage:   "OpenAI model name (https://bit.ly/4hXCXkL)",
 			EnvVars: []string{"OPENAI_MODEL_NAME"},
-			Default: "gpt-4o-mini",
+			Default: app.opt.Providers.OpenAI.ModelName,
 		}
 	)
 
@@ -142,17 +124,7 @@ func NewApp(name string) *App {
 	app.cmd.Action = func(ctx context.Context, c *cmd.Command, args []string) error {
 		var cfg config.Config
 
-		{ // set default options
-			app.opt.ShortMessageOnly = shortMessageOnly.Default
-			app.opt.CommitHistoryLength = commitHistoryLength.Default
-			app.opt.EnableEmoji = enableEmoji.Default
-			app.opt.MaxOutputTokens = maxOutputTokens.Default
-			app.opt.AIProviderName = aiProviderName.Default
-			app.opt.Providers.Gemini.ApiKey = geminiApiKey.Default
-			app.opt.Providers.Gemini.ModelName = geminiModelName.Default
-			app.opt.Providers.OpenAI.ApiKey = openAIApiKey.Default
-			app.opt.Providers.OpenAI.ModelName = openAIModelName.Default
-		}
+		setIfSourceNotNil(&app.opt.ConfigFilePath, configFile.Value)
 
 		// override the default options with the configuration file values, if they are set
 		if configFile.Value != nil && *configFile.Value != "" {
@@ -178,44 +150,20 @@ func NewApp(name string) *App {
 		}
 
 		{ // override the options with the command-line flags
+			setIfFlagIsSet(&app.opt.ConfigFilePath, configFile)
 			setIfFlagIsSet(&app.opt.ShortMessageOnly, shortMessageOnly)
 			setIfFlagIsSet(&app.opt.CommitHistoryLength, commitHistoryLength)
 			setIfFlagIsSet(&app.opt.EnableEmoji, enableEmoji)
 			setIfFlagIsSet(&app.opt.MaxOutputTokens, maxOutputTokens)
 			setIfFlagIsSet(&app.opt.AIProviderName, aiProviderName)
-
 			setIfFlagIsSet(&app.opt.Providers.Gemini.ApiKey, geminiApiKey)
 			setIfFlagIsSet(&app.opt.Providers.Gemini.ModelName, geminiModelName)
-
 			setIfFlagIsSet(&app.opt.Providers.OpenAI.ApiKey, openAIApiKey)
 			setIfFlagIsSet(&app.opt.Providers.OpenAI.ModelName, openAIModelName)
 		}
 
-		{ // validate the options
-			if app.opt.MaxOutputTokens <= 1 {
-				return errors.New("max output tokens must be greater than 1")
-			}
-			if v := app.opt.AIProviderName; !ai.IsProviderSupported(v) {
-				return fmt.Errorf("unsupported AI provider: %s", v)
-			}
-
-			if app.opt.AIProviderName == ai.ProviderGemini {
-				if app.opt.Providers.Gemini.ApiKey == "" {
-					return errors.New("gemini API key is required")
-				}
-				if app.opt.Providers.Gemini.ModelName == "" {
-					return errors.New("gemini model name is required")
-				}
-			}
-
-			if app.opt.AIProviderName == ai.ProviderOpenAI {
-				if app.opt.Providers.OpenAI.ApiKey == "" {
-					return errors.New("OpenAI API key is required")
-				}
-				if app.opt.Providers.OpenAI.ModelName == "" {
-					return errors.New("OpenAI model name is required")
-				}
-			}
+		if err := app.opt.Validate(); err != nil {
+			return fmt.Errorf("invalid options: %w", err)
 		}
 
 		var wd, wdErr = app.getWorkingDir(args)
@@ -229,8 +177,24 @@ func NewApp(name string) *App {
 	return &app
 }
 
+func setIfSourceNotNil[T any](target, source *T) {
+	if target == nil || source == nil {
+		return
+	}
+
+	*target = *source
+}
+
+func setIfFlagIsSet[T cmd.FlagType](target *T, source cmd.Flag[T]) {
+	if target == nil || source.Value == nil || !source.IsSet() {
+		return
+	}
+
+	*target = *source.Value
+}
+
 // getWorkingDir returns the working directory to use for the application.
-func (a *App) getWorkingDir(args []string) (string, error) {
+func (*App) getWorkingDir(args []string) (string, error) {
 	var dir string
 
 	if len(args) > 0 {
@@ -260,8 +224,13 @@ func (a *App) getWorkingDir(args []string) (string, error) {
 	return dir, nil
 }
 
+// Run runs the application.
 func (a *App) Run(ctx context.Context, args []string) error { return a.cmd.Run(ctx, args) }
 
+// Help returns the help message.
+func (a *App) Help() string { return a.cmd.Help() }
+
+// run in the main logic of the application.
 func (a *App) run(ctx context.Context, workingDir string) error {
 	debugf("AI provider: %s", a.opt.AIProviderName)
 
@@ -285,14 +254,22 @@ func (a *App) run(ctx context.Context, workingDir string) error {
 	debugf("working directory: %s", workingDir)
 
 	var (
-		eg, egCtx        = errgroup.WithContext(ctx)
+		eg, _            = errgroup.New(ctx)
 		changes, commits string
 	)
 
-	eg.Go(func() (err error) { changes, err = git.Diff(egCtx, workingDir); return }) //nolint:nlreturn
+	eg.Go(func(ctx context.Context) (err error) {
+		changes, err = git.Diff(ctx, workingDir)
+
+		return
+	})
 
 	if histLen := int(a.opt.CommitHistoryLength); histLen > 0 {
-		eg.Go(func() (err error) { commits, err = git.Log(egCtx, workingDir, histLen); return }) //nolint:nlreturn
+		eg.Go(func(ctx context.Context) (err error) {
+			commits, err = git.Log(ctx, workingDir, histLen)
+
+			return
+		})
 	} else {
 		commits = "NO COMMITS"
 	}
@@ -328,20 +305,4 @@ func (a *App) run(ctx context.Context, workingDir string) error {
 	}
 
 	return nil
-}
-
-func setIfSourceNotNil[T any](target, source *T) {
-	if target == nil || source == nil {
-		return
-	}
-
-	*target = *source
-}
-
-func setIfFlagIsSet[T cmd.FlagType](target *T, source cmd.Flag[T]) {
-	if target == nil || source.Value == nil || !source.IsSet() {
-		return
-	}
-
-	*target = *source.Value
 }
