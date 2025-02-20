@@ -258,13 +258,13 @@ func (f *Flag[T]) Apply(s *flag.FlagSet) error {
 			s.BoolFunc(name, f.Usage, fn)
 		}
 	case
-		int,
-		int64,
-		string,
-		uint,
-		uint64,
-		float64,
-		time.Duration:
+			int,
+			int64,
+			string,
+			uint,
+			uint64,
+			float64,
+			time.Duration:
 		var fn = func(in string) error {
 			if v, err := f.parseString(in); err == nil {
 				f.setValue(v, FlagValueSourceFlag)
@@ -278,6 +278,8 @@ func (f *Flag[T]) Apply(s *flag.FlagSet) error {
 		for _, name := range f.Names {
 			s.Func(name, f.Usage, fn)
 		}
+	default:
+		return fmt.Errorf("unsupported flag type: %T", f.Default)
 	}
 
 	return nil
