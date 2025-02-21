@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync"
 	"unicode/utf8"
 )
 
@@ -22,12 +23,23 @@ type Command struct {
 
 	Action func(_ context.Context, _ *Command, args []string) error // Action function executed when the command runs.
 
-	appendBuiltInFlagsOnce bool // flag to ensure built-in flags are appended only once
-	showHelp, showVersion  bool // built-in flags for displaying help and version
+	initOnce              sync.Once // to ensure initialization is done only once
+	showHelp, showVersion bool      // built-in flags for displaying help and version
+}
+
+func (c *Command) init() {
+	c.initOnce.Do(func() {
+		c.Flags = append(c.Flags, // append built-in flags
+			&Flag[bool]{Names: []string{"help", "h"}, Usage: "Show help", Value: &c.showHelp},
+			&Flag[bool]{Names: []string{"version", "v"}, Usage: "Print the version", Value: &c.showVersion},
+		)
+	})
 }
 
 // Help generates and returns a formatted help message for the command.
 func (c *Command) Help() string { //nolint:funlen
+	c.init()
+
 	const offset = "   " // indentation offset for formatting
 
 	var b strings.Builder
@@ -113,12 +125,14 @@ func (c *Command) Help() string { //nolint:funlen
 }
 
 // Run executes the command with the provided arguments.
-func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funlen,gocyclo,contextcheck
+func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funlen,contextcheck
 	if ctx == nil {
 		ctx = context.Background()
 	} else if err := ctx.Err(); err != nil {
 		return err // do nothing if the context is already canceled
 	}
+
+	c.init()
 
 	// create a new flag set for parsing command-line flags
 	var set = flag.NewFlagSet(c.Name, flag.ContinueOnError)
@@ -129,16 +143,6 @@ func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funle
 	// set default output if not defined
 	if c.Output == nil {
 		c.Output = os.Stdout
-	}
-
-	// append built-in flags only once
-	if !c.appendBuiltInFlagsOnce {
-		c.Flags = append(c.Flags,
-			&Flag[bool]{Names: []string{"help", "h"}, Usage: "Show help", Value: &c.showHelp},
-			&Flag[bool]{Names: []string{"version", "v"}, Usage: "Print the version", Value: &c.showVersion},
-		)
-
-		c.appendBuiltInFlagsOnce = true
 	}
 
 	// register flags in the flag set

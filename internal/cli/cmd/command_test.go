@@ -14,35 +14,39 @@ import (
 func TestCommand_Help(t *testing.T) {
 	t.Parallel()
 
+	var builtInFlagsHelp = `Options:
+   --help, -h     Show help
+   --version, -v  Print the version`
+
 	for name, tc := range map[string]struct {
-		giveCommand cmd.Command
+		giveCommand *cmd.Command
 		wantHelp    string
 	}{
 		"empty": {
-			giveCommand: cmd.Command{},
-			wantHelp:    "",
+			giveCommand: &cmd.Command{},
+			wantHelp:    builtInFlagsHelp,
 		},
 		"with description": {
-			giveCommand: cmd.Command{
+			giveCommand: &cmd.Command{
 				Description: "Some description here",
 			},
-			wantHelp: "Description:\n   Some description here",
+			wantHelp: "Description:\n   Some description here\n\n" + builtInFlagsHelp,
 		},
 		"with name": {
-			giveCommand: cmd.Command{
+			giveCommand: &cmd.Command{
 				Name: "some-name",
 			},
-			wantHelp: "Usage:\n   some-name",
+			wantHelp: "Usage:\n   some-name\n\n" + builtInFlagsHelp,
 		},
 		"with name and usage": {
-			giveCommand: cmd.Command{
+			giveCommand: &cmd.Command{
 				Name:  "some-name",
 				Usage: "some-usage",
 			},
-			wantHelp: "Usage:\n   some-name some-usage",
+			wantHelp: "Usage:\n   some-name some-usage\n\n" + builtInFlagsHelp,
 		},
 		"full": {
-			giveCommand: cmd.Command{
+			giveCommand: &cmd.Command{
 				Name:        "some-name",
 				Description: "Some description here",
 				Usage:       "some-usage",
@@ -52,10 +56,6 @@ func TestCommand_Help(t *testing.T) {
 						Names:   []string{"config-file", "c"},
 						Usage:   "Path to the configuration file",
 						EnvVars: []string{"CONFIG_FILE"},
-					},
-					&cmd.Flag[bool]{
-						Names: []string{"help", "h"},
-						Usage: "Show help",
 					},
 				},
 			},
@@ -70,15 +70,14 @@ Version:
 
 Options:
    --config-file="…", -c="…"  Path to the configuration file [$CONFIG_FILE]
-   --help, -h                 Show help`,
+   --help, -h                 Show help
+   --version, -v              Print the version`,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			gotHelp := tc.giveCommand.Help()
-
-			assertEqual(t, tc.wantHelp, gotHelp)
+			assertEqual(t, tc.giveCommand.Help(), tc.wantHelp)
 		})
 	}
 }

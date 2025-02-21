@@ -184,6 +184,8 @@ Options:
    --gemini-model-name="…", --gm="…"                Gemini model name (https://bit.ly/4i02ARR) (default: gemini-2.0-flash) [$GEMINI_MODEL_NAME]
    --openai-api-key="…", --oa="…"                   OpenAI API key (https://bit.ly/4i03NbR, you need to add funds to your account) [$OPENAI_API_KEY]
    --openai-model-name="…", --om="…"                OpenAI model name (https://bit.ly/4hXCXkL) (default: gpt-4o-mini) [$OPENAI_MODEL_NAME]
+   --help, -h                                       Show help
+   --version, -v                                    Print the version
 ```
 <!--/GENERATED:APP_README-->
 
