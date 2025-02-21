@@ -1093,7 +1093,7 @@ func yaml_parser_scan_to_next_token(parser *yaml_parser_t) bool {
 				len(comment.line) > 0 &&
 				!is_break(parser.buffer, parser.buffer_pos) {
 				// If it was in the prior line, reposition so it becomes a
-				// header of the follow up token. Otherwise, keep it in place
+				// header of the follow-up token. Otherwise, keep it in place
 				// so it becomes a header of the former.
 				comment.head = comment.line
 				comment.line = nil
@@ -1272,7 +1272,7 @@ func yaml_parser_scan_directive_name(parser *yaml_parser_t, start_mark yaml_mark
 		return false
 	}
 
-	// Check for an blank character after the name.
+	// Check for a blank character after the name.
 	if !is_blankz(parser.buffer, parser.buffer_pos) {
 		yaml_parser_set_scanner_error(parser, "while scanning a directive",
 			start_mark, "found unexpected non-alphabetical character")
@@ -1468,7 +1468,7 @@ func yaml_parser_scan_anchor(parser *yaml_parser_t, token *yaml_token_t, typ yam
 	end_mark := parser.mark
 
 	/*
-	 * Check if length of the anchor is greater than 0 and it is followed by
+	 * Check if length of the anchor is greater than 0, and it is followed by
 	 * a whitespace character or one of the indicators:
 	 *
 	 *      '?', ':', ',', ']', '}', '%', '@', '`'.
@@ -1708,7 +1708,7 @@ func yaml_parser_scan_tag_uri(
 	return true
 }
 
-// Decode an URI-escape sequence corresponding to a single UTF-8 character.
+// Decode a URI-escape sequence corresponding to a single UTF-8 character.
 func yaml_parser_scan_uri_escapes(parser *yaml_parser_t, directive bool, start_mark yaml_mark_t, s *[]byte) bool {
 	// Decode the required number of characters.
 	w := 1024
@@ -2070,7 +2070,7 @@ func yaml_parser_scan_flow_scalar(parser *yaml_parser_t, token *yaml_token_t, si
 
 		for !is_blankz(parser.buffer, parser.buffer_pos) {
 			if single && parser.buffer[parser.buffer_pos] == '\'' && parser.buffer[parser.buffer_pos+1] == '\'' {
-				// Is is an escaped single quote.
+				// Is an escaped single quote.
 				s = append(s, '\'')
 
 				skip(parser)

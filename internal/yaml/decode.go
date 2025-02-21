@@ -24,21 +24,6 @@ type parser struct {
 	textless bool
 }
 
-func newParser(b []byte) *parser {
-	p := parser{}
-	if !yaml_parser_initialize(&p.parser) {
-		panic("failed to initialize YAML emitter")
-	}
-
-	if len(b) == 0 {
-		b = []byte{'\n'}
-	}
-
-	yaml_parser_set_input_string(&p.parser, b)
-
-	return &p
-}
-
 func newParserFromReader(r io.Reader) *parser {
 	p := parser{}
 	if !yaml_parser_initialize(&p.parser) {
@@ -58,14 +43,6 @@ func (p *parser) init() {
 	p.anchors = make(map[string]*Node)
 	p.expect(yaml_STREAM_START_EVENT)
 	p.doneInit = true
-}
-
-func (p *parser) destroy() {
-	if p.event.typ != yaml_NO_EVENT {
-		yaml_event_delete(&p.event)
-	}
-
-	yaml_parser_delete(&p.parser)
 }
 
 // expect consumes an event from the event stream and

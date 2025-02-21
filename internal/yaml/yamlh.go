@@ -29,18 +29,6 @@ const (
 	yaml_UTF16BE_ENCODING // The UTF-16-BE encoding with BOM.
 )
 
-type yaml_break_t int
-
-// Line break types.
-const (
-	// Let the parser choose the break type.
-	yaml_ANY_BREAK yaml_break_t = iota
-
-	yaml_CR_BREAK   // Use CR for line breaks (Mac style).
-	yaml_LN_BREAK   // Use LN for line breaks (Unix style).
-	yaml_CRLN_BREAK // Use CR LN for line breaks (DOS style).
-)
-
 type yaml_error_type_t int
 
 // Many bad things could happen with the parser and emitter.
@@ -51,9 +39,6 @@ const (
 	yaml_READER_ERROR  // Cannot read or decode the input stream.
 	yaml_SCANNER_ERROR // Cannot scan the input stream.
 	yaml_PARSER_ERROR  // Cannot parse the input stream.
-	_
-	yaml_WRITER_ERROR  // Cannot write to the output stream.
-	yaml_EMITTER_ERROR // Cannot emit a YAML stream.
 )
 
 // The pointer position.
@@ -72,7 +57,7 @@ type yaml_scalar_style_t yaml_style_t
 // Scalar styles.
 const (
 	// Let the emitter choose the style.
-	yaml_ANY_SCALAR_STYLE yaml_scalar_style_t = 0
+	_ yaml_scalar_style_t = 0
 
 	yaml_PLAIN_SCALAR_STYLE         yaml_scalar_style_t = 1 << iota // The plain scalar style.
 	yaml_SINGLE_QUOTED_SCALAR_STYLE                                 // The single-quoted scalar style.
@@ -233,7 +218,6 @@ type yaml_event_t struct {
 	head_comment []byte
 	line_comment []byte
 	foot_comment []byte
-	tail_comment []byte
 
 	// The anchor (for yaml_SCALAR_EVENT, yaml_SEQUENCE_START_EVENT, yaml_MAPPING_START_EVENT, yaml_ALIAS_EVENT).
 	anchor []byte
@@ -366,8 +350,6 @@ type yaml_parser_t struct {
 	read_handler yaml_read_handler_t // Read handler.
 
 	input_reader io.Reader // File input data.
-	input        []byte    // String input data.
-	input_pos    int
 
 	eof bool // EOF flag
 
@@ -433,143 +415,4 @@ type yaml_comment_t struct {
 	head []byte
 	line []byte
 	foot []byte
-}
-
-// Emitter Definitions
-
-// The prototype of a write handler.
-//
-// The write handler is called when the emitter needs to flush the accumulated
-// characters to the output.  The handler should write @a size bytes of the
-// @a buffer to the output.
-//
-// @param[in,out]   data        A pointer to an application data specified by
-//
-//	yaml_emitter_set_output().
-//
-// @param[in]       buffer      The buffer with bytes to be written.
-// @param[in]       size        The size of the buffer.
-//
-// @returns On success, the handler should return @c 1.  If the handler failed,
-// the returned value should be @c 0.
-type yaml_write_handler_t func(emitter *yaml_emitter_t, buffer []byte) error
-
-type yaml_emitter_state_t int
-
-// The emitter states.
-const (
-	// Expect STREAM-START.
-	yaml_EMIT_STREAM_START_STATE yaml_emitter_state_t = iota
-
-	yaml_EMIT_FIRST_DOCUMENT_START_STATE       // Expect the first DOCUMENT-START or STREAM-END.
-	yaml_EMIT_DOCUMENT_START_STATE             // Expect DOCUMENT-START or STREAM-END.
-	yaml_EMIT_DOCUMENT_CONTENT_STATE           // Expect the content of a document.
-	yaml_EMIT_DOCUMENT_END_STATE               // Expect DOCUMENT-END.
-	yaml_EMIT_FLOW_SEQUENCE_FIRST_ITEM_STATE   // Expect the first item of a flow sequence.
-	yaml_EMIT_FLOW_SEQUENCE_TRAIL_ITEM_STATE   // Expect the next item of a flow sequence, with the comma written out
-	yaml_EMIT_FLOW_SEQUENCE_ITEM_STATE         // Expect an item of a flow sequence.
-	yaml_EMIT_FLOW_MAPPING_FIRST_KEY_STATE     // Expect the first key of a flow mapping.
-	yaml_EMIT_FLOW_MAPPING_TRAIL_KEY_STATE     // Expect the next key of a flow mapping, with the comma written out
-	yaml_EMIT_FLOW_MAPPING_KEY_STATE           // Expect a key of a flow mapping.
-	yaml_EMIT_FLOW_MAPPING_SIMPLE_VALUE_STATE  // Expect a value for a simple key of a flow mapping.
-	yaml_EMIT_FLOW_MAPPING_VALUE_STATE         // Expect a value of a flow mapping.
-	yaml_EMIT_BLOCK_SEQUENCE_FIRST_ITEM_STATE  // Expect the first item of a block sequence.
-	yaml_EMIT_BLOCK_SEQUENCE_ITEM_STATE        // Expect an item of a block sequence.
-	yaml_EMIT_BLOCK_MAPPING_FIRST_KEY_STATE    // Expect the first key of a block mapping.
-	yaml_EMIT_BLOCK_MAPPING_KEY_STATE          // Expect the key of a block mapping.
-	yaml_EMIT_BLOCK_MAPPING_SIMPLE_VALUE_STATE // Expect a value for a simple key of a block mapping.
-	yaml_EMIT_BLOCK_MAPPING_VALUE_STATE        // Expect a value of a block mapping.
-	yaml_EMIT_END_STATE                        // Expect nothing.
-)
-
-// The emitter structure.
-//
-// All members are internal.  Manage the structure using the @c yaml_emitter_
-// family of functions.
-type yaml_emitter_t struct {
-
-	// Error handling
-
-	error   yaml_error_type_t // Error type.
-	problem string            // Error description.
-
-	// Writer stuff
-
-	write_handler yaml_write_handler_t // Write handler.
-
-	output_buffer *[]byte // String output data.
-
-	buffer     []byte // The working buffer.
-	buffer_pos int    // The current position of the buffer.
-
-	raw_buffer []byte // The raw buffer.
-
-	encoding yaml_encoding_t // The stream encoding.
-
-	// Emitter stuff
-
-	canonical   bool         // If the output is in the canonical style?
-	best_indent int          // The number of indentation spaces.
-	best_width  int          // The preferred width of the output lines.
-	unicode     bool         // Allow unescaped non-ASCII characters?
-	line_break  yaml_break_t // The preferred line break.
-
-	state  yaml_emitter_state_t   // The current emitter state.
-	states []yaml_emitter_state_t // The stack of states.
-
-	events      []yaml_event_t // The event queue.
-	events_head int            // The head of the event queue.
-
-	indents []int // The stack of indentation levels.
-
-	tag_directives []yaml_tag_directive_t // The list of tag directives.
-
-	indent int // The current indentation level.
-
-	flow_level int // The current flow level.
-
-	root_context       bool // Is it the document root context?
-	sequence_context   bool // Is it a sequence context?
-	mapping_context    bool // Is it a mapping context?
-	simple_key_context bool // Is it a simple mapping key context?
-
-	line       int  // The current line.
-	column     int  // The current column.
-	whitespace bool // If the last character was a whitespace?
-	indention  bool // If the last character was an indentation character (' ', '-', '?', ':')?
-	open_ended bool // If an explicit document end is required?
-
-	space_above bool // Is there's an empty line above?
-	foot_indent int  // The indent used to write the foot comment above, or -1 if none.
-
-	// Anchor analysis.
-	anchor_data struct {
-		anchor []byte // The anchor value.
-		alias  bool   // Is it an alias?
-	}
-
-	// Tag analysis.
-	tag_data struct {
-		handle []byte // The tag handle.
-		suffix []byte // The tag suffix.
-	}
-
-	// Scalar analysis.
-	scalar_data struct {
-		value                 []byte              // The scalar value.
-		multiline             bool                // Does the scalar contain line breaks?
-		flow_plain_allowed    bool                // Can the scalar be expessed in the flow plain style?
-		block_plain_allowed   bool                // Can the scalar be expressed in the block plain style?
-		single_quoted_allowed bool                // Can the scalar be expressed in the single quoted style?
-		block_allowed         bool                // Can the scalar be expressed in the literal or folded styles?
-		style                 yaml_scalar_style_t // The output style.
-	}
-
-	// Comments
-	head_comment []byte
-	line_comment []byte
-	foot_comment []byte
-	tail_comment []byte
-
-	key_line_comment []byte
 }

@@ -2,9 +2,9 @@
 //
 // It contains the source code for the `github.com/go-yaml/yaml` package.
 //
-// This is a copy of the original package (v3.0.1) with some code removed
-// (reported by the `deadcode` tool https://pkg.go.dev/golang.org/x/tools@v0.30.0/cmd/deadcode
-// and golangci-lint 'unused' linter).
+// This is a copy of the original package (v3.0.1) with some code (Marshalling/Encoding)
+// removed (reported by the `deadcode` tool https://go.dev/blog/deadcode and
+// golangci-lint 'unused' linter).
 //
 // It has been placed here to eliminate the need to download the package from remote galaxies.
 // Updating this package is not necessary, as it is highly stable and mature.

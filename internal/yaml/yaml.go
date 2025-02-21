@@ -20,16 +20,6 @@ type obsoleteUnmarshaler interface {
 	UnmarshalYAML(unmarshal func(any) error) error
 }
 
-// The Marshaler interface may be implemented by types to customize their
-// behavior when being marshaled into a YAML document. The returned value
-// is marshaled in place of the original value implementing Marshaler.
-//
-// If an error is returned by MarshalYAML, the marshaling procedure stops
-// and returns with the provided error.
-type Marshaler interface {
-	MarshalYAML() (any, error)
-}
-
 // A Decoder reads and decodes YAML values from an input stream.
 type Decoder struct {
 	parser      *parser
@@ -95,27 +85,6 @@ func (n *Node) Decode(v any) (err error) {
 	if len(d.terrors) > 0 {
 		return &TypeError{d.terrors}
 	}
-
-	return nil
-}
-
-// Encode encodes value v and stores its representation in n.
-//
-// See the documentation for Marshal for details about the
-// conversion of Go values into YAML.
-func (n *Node) Encode(v any) (err error) {
-	defer handleErr(&err)
-
-	e := newEncoder()
-	defer e.destroy()
-	e.marshalDoc("", reflect.ValueOf(v))
-	e.finish()
-	p := newParser(e.out)
-	p.textless = true
-
-	defer p.destroy()
-	doc := p.parse()
-	*n = *doc.Content[0]
 
 	return nil
 }
@@ -341,7 +310,7 @@ type structInfo struct {
 	FieldsList []fieldInfo
 
 	// InlineMap is the number of the field in the struct that
-	// contains an ,inline map, or -1 if there's none.
+	// contains an inline map, or -1 if there's none.
 	InlineMap int
 
 	// InlineUnmarshalers holds indexes to inlined fields that
@@ -519,49 +488,4 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 // is time.Time.
 type IsZeroer interface {
 	IsZero() bool
-}
-
-func isZero(v reflect.Value) bool {
-	kind := v.Kind()
-	if z, ok := v.Interface().(IsZeroer); ok {
-		if (kind == reflect.Ptr || kind == reflect.Interface) && v.IsNil() {
-			return true
-		}
-
-		return z.IsZero()
-	}
-
-	switch kind {
-	case reflect.String:
-		return len(v.String()) == 0
-	case reflect.Interface, reflect.Ptr:
-		return v.IsNil()
-	case reflect.Slice:
-		return v.Len() == 0
-	case reflect.Map:
-		return v.Len() == 0
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int() == 0
-	case reflect.Float32, reflect.Float64:
-		return v.Float() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return v.Uint() == 0
-	case reflect.Bool:
-		return !v.Bool()
-	case reflect.Struct:
-		vt := v.Type()
-		for i := v.NumField() - 1; i >= 0; i-- {
-			if vt.Field(i).PkgPath != "" {
-				continue // Private field
-			}
-
-			if !isZero(v.Field(i)) {
-				return false
-			}
-		}
-
-		return true
-	}
-
-	return false
 }

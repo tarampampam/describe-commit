@@ -157,7 +157,7 @@ func resolve(tag string, in string) (rtag string, out any) {
 	}
 
 	if hint != 0 && tag != strTag && tag != binaryTag {
-		// Handle things we can lookup in a map.
+		// Handle things we can look up in a map.
 		if item, ok := resolveMap[in]; ok {
 			return item.tag, item.value
 		}
