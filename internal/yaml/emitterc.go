@@ -471,10 +471,8 @@ func yaml_emitter_emit_document_start(emitter *yaml_emitter_t, event *yaml_event
 				return false
 			}
 
-			if emitter.canonical || true {
-				if !yaml_emitter_write_indent(emitter) {
-					return false
-				}
+			if !yaml_emitter_write_indent(emitter) {
+				return false
 			}
 		}
 
@@ -924,7 +922,7 @@ func yaml_emitter_emit_block_mapping_value(emitter *yaml_emitter_t, event *yaml_
 		//      key itself.
 		if event.typ == yaml_SCALAR_EVENT {
 			if len(emitter.line_comment) == 0 {
-				// A scalar is coming and it has no line comments by itself yet,
+				// A scalar is coming, and it has no line comments by itself yet,
 				// so just let it handle the line comment as usual. If it has a
 				// line comment, we can't have both so the one from the key is lost.
 				emitter.line_comment = emitter.key_line_comment
@@ -955,10 +953,6 @@ func yaml_emitter_emit_block_mapping_value(emitter *yaml_emitter_t, event *yaml_
 	}
 
 	return true
-}
-
-func yaml_emitter_silent_nil_event(emitter *yaml_emitter_t, event *yaml_event_t) bool {
-	return event.typ == yaml_SCALAR_EVENT && event.implicit && !emitter.canonical && len(emitter.scalar_data.value) == 0
 }
 
 // Expect a node.
@@ -1296,7 +1290,7 @@ func yaml_emitter_process_head_comment(emitter *yaml_emitter_t) bool {
 	return true
 }
 
-// Write an line comment.
+// Write a line comment.
 func yaml_emitter_process_line_comment(emitter *yaml_emitter_t) bool {
 	if len(emitter.line_comment) == 0 {
 		return true

@@ -141,57 +141,6 @@ const (
 	yaml_SCALAR_TOKEN // A SCALAR token.
 )
 
-func (tt yaml_token_type_t) String() string {
-	switch tt {
-	case yaml_NO_TOKEN:
-		return "yaml_NO_TOKEN"
-	case yaml_STREAM_START_TOKEN:
-		return "yaml_STREAM_START_TOKEN"
-	case yaml_STREAM_END_TOKEN:
-		return "yaml_STREAM_END_TOKEN"
-	case yaml_VERSION_DIRECTIVE_TOKEN:
-		return "yaml_VERSION_DIRECTIVE_TOKEN"
-	case yaml_TAG_DIRECTIVE_TOKEN:
-		return "yaml_TAG_DIRECTIVE_TOKEN"
-	case yaml_DOCUMENT_START_TOKEN:
-		return "yaml_DOCUMENT_START_TOKEN"
-	case yaml_DOCUMENT_END_TOKEN:
-		return "yaml_DOCUMENT_END_TOKEN"
-	case yaml_BLOCK_SEQUENCE_START_TOKEN:
-		return "yaml_BLOCK_SEQUENCE_START_TOKEN"
-	case yaml_BLOCK_MAPPING_START_TOKEN:
-		return "yaml_BLOCK_MAPPING_START_TOKEN"
-	case yaml_BLOCK_END_TOKEN:
-		return "yaml_BLOCK_END_TOKEN"
-	case yaml_FLOW_SEQUENCE_START_TOKEN:
-		return "yaml_FLOW_SEQUENCE_START_TOKEN"
-	case yaml_FLOW_SEQUENCE_END_TOKEN:
-		return "yaml_FLOW_SEQUENCE_END_TOKEN"
-	case yaml_FLOW_MAPPING_START_TOKEN:
-		return "yaml_FLOW_MAPPING_START_TOKEN"
-	case yaml_FLOW_MAPPING_END_TOKEN:
-		return "yaml_FLOW_MAPPING_END_TOKEN"
-	case yaml_BLOCK_ENTRY_TOKEN:
-		return "yaml_BLOCK_ENTRY_TOKEN"
-	case yaml_FLOW_ENTRY_TOKEN:
-		return "yaml_FLOW_ENTRY_TOKEN"
-	case yaml_KEY_TOKEN:
-		return "yaml_KEY_TOKEN"
-	case yaml_VALUE_TOKEN:
-		return "yaml_VALUE_TOKEN"
-	case yaml_ALIAS_TOKEN:
-		return "yaml_ALIAS_TOKEN"
-	case yaml_ANCHOR_TOKEN:
-		return "yaml_ANCHOR_TOKEN"
-	case yaml_TAG_TOKEN:
-		return "yaml_TAG_TOKEN"
-	case yaml_SCALAR_TOKEN:
-		return "yaml_SCALAR_TOKEN"
-	}
-
-	return "<unknown token>"
-}
-
 // The token structure.
 type yaml_token_t struct {
 	// The token type.
@@ -468,61 +417,6 @@ const (
 	yaml_PARSE_FLOW_MAPPING_EMPTY_VALUE_STATE          // Expect an empty value of a flow mapping.
 	yaml_PARSE_END_STATE                               // Expect nothing.
 )
-
-func (ps yaml_parser_state_t) String() string {
-	switch ps {
-	case yaml_PARSE_STREAM_START_STATE:
-		return "yaml_PARSE_STREAM_START_STATE"
-	case yaml_PARSE_IMPLICIT_DOCUMENT_START_STATE:
-		return "yaml_PARSE_IMPLICIT_DOCUMENT_START_STATE"
-	case yaml_PARSE_DOCUMENT_START_STATE:
-		return "yaml_PARSE_DOCUMENT_START_STATE"
-	case yaml_PARSE_DOCUMENT_CONTENT_STATE:
-		return "yaml_PARSE_DOCUMENT_CONTENT_STATE"
-	case yaml_PARSE_DOCUMENT_END_STATE:
-		return "yaml_PARSE_DOCUMENT_END_STATE"
-	case yaml_PARSE_BLOCK_NODE_STATE:
-		return "yaml_PARSE_BLOCK_NODE_STATE"
-	case yaml_PARSE_BLOCK_NODE_OR_INDENTLESS_SEQUENCE_STATE:
-		return "yaml_PARSE_BLOCK_NODE_OR_INDENTLESS_SEQUENCE_STATE"
-	case yaml_PARSE_FLOW_NODE_STATE:
-		return "yaml_PARSE_FLOW_NODE_STATE"
-	case yaml_PARSE_BLOCK_SEQUENCE_FIRST_ENTRY_STATE:
-		return "yaml_PARSE_BLOCK_SEQUENCE_FIRST_ENTRY_STATE"
-	case yaml_PARSE_BLOCK_SEQUENCE_ENTRY_STATE:
-		return "yaml_PARSE_BLOCK_SEQUENCE_ENTRY_STATE"
-	case yaml_PARSE_INDENTLESS_SEQUENCE_ENTRY_STATE:
-		return "yaml_PARSE_INDENTLESS_SEQUENCE_ENTRY_STATE"
-	case yaml_PARSE_BLOCK_MAPPING_FIRST_KEY_STATE:
-		return "yaml_PARSE_BLOCK_MAPPING_FIRST_KEY_STATE"
-	case yaml_PARSE_BLOCK_MAPPING_KEY_STATE:
-		return "yaml_PARSE_BLOCK_MAPPING_KEY_STATE"
-	case yaml_PARSE_BLOCK_MAPPING_VALUE_STATE:
-		return "yaml_PARSE_BLOCK_MAPPING_VALUE_STATE"
-	case yaml_PARSE_FLOW_SEQUENCE_FIRST_ENTRY_STATE:
-		return "yaml_PARSE_FLOW_SEQUENCE_FIRST_ENTRY_STATE"
-	case yaml_PARSE_FLOW_SEQUENCE_ENTRY_STATE:
-		return "yaml_PARSE_FLOW_SEQUENCE_ENTRY_STATE"
-	case yaml_PARSE_FLOW_SEQUENCE_ENTRY_MAPPING_KEY_STATE:
-		return "yaml_PARSE_FLOW_SEQUENCE_ENTRY_MAPPING_KEY_STATE"
-	case yaml_PARSE_FLOW_SEQUENCE_ENTRY_MAPPING_VALUE_STATE:
-		return "yaml_PARSE_FLOW_SEQUENCE_ENTRY_MAPPING_VALUE_STATE"
-	case yaml_PARSE_FLOW_SEQUENCE_ENTRY_MAPPING_END_STATE:
-		return "yaml_PARSE_FLOW_SEQUENCE_ENTRY_MAPPING_END_STATE"
-	case yaml_PARSE_FLOW_MAPPING_FIRST_KEY_STATE:
-		return "yaml_PARSE_FLOW_MAPPING_FIRST_KEY_STATE"
-	case yaml_PARSE_FLOW_MAPPING_KEY_STATE:
-		return "yaml_PARSE_FLOW_MAPPING_KEY_STATE"
-	case yaml_PARSE_FLOW_MAPPING_VALUE_STATE:
-		return "yaml_PARSE_FLOW_MAPPING_VALUE_STATE"
-	case yaml_PARSE_FLOW_MAPPING_EMPTY_VALUE_STATE:
-		return "yaml_PARSE_FLOW_MAPPING_EMPTY_VALUE_STATE"
-	case yaml_PARSE_END_STATE:
-		return "yaml_PARSE_END_STATE"
-	}
-
-	return "<unknown parser state>"
-}
 
 // This structure holds aliases data.
 type yaml_alias_data_t struct {

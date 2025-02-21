@@ -614,12 +614,6 @@ func (d *decoder) alias(n *Node, out reflect.Value) (good bool) {
 
 var zeroValue reflect.Value
 
-func resetMap(out reflect.Value) {
-	for _, k := range out.MapKeys() {
-		out.SetMapIndex(k, zeroValue)
-	}
-}
-
 func (d *decoder) null(out reflect.Value) bool {
 	if out.CanAddr() {
 		switch out.Kind() {
@@ -756,8 +750,8 @@ func (d *decoder) scalar(n *Node, out reflect.Value) bool {
 				return true
 			}
 		case uint64:
-			if !out.OverflowUint(uint64(resolved)) {
-				out.SetUint(uint64(resolved))
+			if !out.OverflowUint(resolved) {
+				out.SetUint(resolved)
 
 				return true
 			}

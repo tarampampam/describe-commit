@@ -103,16 +103,6 @@ func yaml_parser_update_buffer(parser *yaml_parser_t, length int) bool {
 	// The fact we need to do this is pretty awful, but the description above implies
 	// for that to be the case, and there are tests
 
-	// If the EOF flag is set and the raw buffer is empty, do nothing.
-	if parser.eof && parser.raw_buffer_pos == len(parser.raw_buffer) {
-		// [Go] ACTUALLY! Read the documentation of this function above.
-		// This is just broken. To return true, we need to have the
-		// given length in the buffer. Not doing that means every single
-		// check that calls this function to make sure the buffer has a
-		// given length is Go) panicking; or C) accessing invalid memory.
-		// return true
-	}
-
 	// Return if the buffer contains enough characters.
 	if parser.unread >= length {
 		return true
@@ -272,7 +262,7 @@ func yaml_parser_update_buffer(parser *yaml_parser_t, length int) bool {
 				// (http://www.ietf.org/rfc/rfc2781.txt).
 				//
 				// Normally, two subsequent bytes describe a Unicode
-				// character.  However a special technique (called a
+				// character. However, a special technique (called a
 				// surrogate pair) is used for specifying character
 				// values larger than 0xFFFF.
 				//
@@ -412,7 +402,7 @@ func yaml_parser_update_buffer(parser *yaml_parser_t, length int) bool {
 	// [Go] Read the documentation of this function above. To return true,
 	// we need to have the given length in the buffer. Not doing that means
 	// every single check that calls this function to make sure the buffer
-	// has a given length is Go) panicking; or C) accessing invalid memory.
+	// has a given length is Go (panicking; or C) accessing invalid memory.
 	// This happens here due to the EOF above breaking early.
 	for buffer_len < length {
 		parser.buffer[buffer_len] = 0

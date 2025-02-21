@@ -30,43 +30,6 @@ type Marshaler interface {
 	MarshalYAML() (any, error)
 }
 
-// Unmarshal decodes the first document found within the in byte slice
-// and assigns decoded values into the out value.
-//
-// Maps and pointers (to a struct, string, int, etc) are accepted as out
-// values. If an internal pointer within a struct is not initialized,
-// the yaml package will initialize it if necessary for unmarshalling
-// the provided data. The out parameter must not be nil.
-//
-// The type of the decoded values should be compatible with the respective
-// values in out. If one or more values cannot be decoded due to a type
-// mismatches, decoding continues partially until the end of the YAML
-// content, and a *yaml.TypeError is returned with details for all
-// missed values.
-//
-// Struct fields are only unmarshalled if they are exported (have an
-// upper case first letter), and are unmarshalled using the field name
-// lowercased as the default key. Custom keys may be defined via the
-// "yaml" name in the field tag: the content preceding the first comma
-// is used as the key, and the following comma-separated options are
-// used to tweak the marshaling process (see Marshal).
-// Conflicting names result in a runtime error.
-//
-// For example:
-//
-//	type T struct {
-//	    F int `yaml:"a,omitempty"`
-//	    B int
-//	}
-//	var t T
-//	yaml.Unmarshal([]byte("a: 1\nb: 2"), &t)
-//
-// See the documentation of Marshal for the format of tags and a list of
-// supported tag options.
-func Unmarshal(in []byte, out any) (err error) {
-	return unmarshal(in, out, false)
-}
-
 // A Decoder reads and decodes YAML values from an input stream.
 type Decoder struct {
 	parser      *parser
@@ -81,12 +44,6 @@ func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		parser: newParserFromReader(r),
 	}
-}
-
-// KnownFields ensures that the keys in decoded mappings to
-// exist as fields in the struct being decoded into.
-func (dec *Decoder) KnownFields(enable bool) {
-	dec.knownFields = enable
 }
 
 // Decode reads the next YAML-encoded value from its input
@@ -142,111 +99,9 @@ func (n *Node) Decode(v any) (err error) {
 	return nil
 }
 
-func unmarshal(in []byte, out any, strict bool) (err error) {
-	defer handleErr(&err)
-
-	d := newDecoder()
-
-	p := newParser(in)
-	defer p.destroy()
-
-	node := p.parse()
-	if node != nil {
-		v := reflect.ValueOf(out)
-		if v.Kind() == reflect.Ptr && !v.IsNil() {
-			v = v.Elem()
-		}
-
-		d.unmarshal(node, v)
-	}
-
-	if len(d.terrors) > 0 {
-		return &TypeError{d.terrors}
-	}
-
-	return nil
-}
-
-// Marshal serializes the value provided into a YAML document. The structure
-// of the generated document will reflect the structure of the value itself.
-// Maps and pointers (to struct, string, int, etc) are accepted as the in value.
-//
-// Struct fields are only marshaled if they are exported (have an upper case
-// first letter), and are marshaled using the field name lowercased as the
-// default key. Custom keys may be defined via the "yaml" name in the field
-// tag: the content preceding the first comma is used as the key, and the
-// following comma-separated options are used to tweak the marshaling process.
-// Conflicting names result in a runtime error.
-//
-// The field tag format accepted is:
-//
-//	`(...) yaml:"[<key>][,<flag1>[,<flag2>]]" (...)`
-//
-// The following flags are currently supported:
-//
-//	omitempty    Only include the field if it's not set to the zero
-//	             value for the type or to empty slices or maps.
-//	             Zero valued structs will be omitted if all their public
-//	             fields are zero, unless they implement an IsZero
-//	             method (see the IsZeroer interface type), in which
-//	             case the field will be excluded if IsZero returns true.
-//
-//	flow         Marshal using a flow style (useful for structs,
-//	             sequences and maps).
-//
-//	inline       Inline the field, which must be a struct or a map,
-//	             causing all of its fields or keys to be processed as if
-//	             they were part of the outer struct. For maps, keys must
-//	             not conflict with the yaml keys of other struct fields.
-//
-// In addition, if the key is "-", the field is ignored.
-//
-// For example:
-//
-//	type T struct {
-//	    F int `yaml:"a,omitempty"`
-//	    B int
-//	}
-//	yaml.Marshal(&T{B: 2}) // Returns "b: 2\n"
-//	yaml.Marshal(&T{F: 1}} // Returns "a: 1\nb: 0\n"
-func Marshal(in any) (out []byte, err error) {
-	defer handleErr(&err)
-
-	e := newEncoder()
-	defer e.destroy()
-	e.marshalDoc("", reflect.ValueOf(in))
-	e.finish()
-	out = e.out
-
-	return
-}
-
 // An Encoder writes YAML values to an output stream.
 type Encoder struct {
 	encoder *encoder
-}
-
-// NewEncoder returns a new encoder that writes to w.
-// The Encoder should be closed after use to flush all data
-// to w.
-func NewEncoder(w io.Writer) *Encoder {
-	return &Encoder{
-		encoder: newEncoderWithWriter(w),
-	}
-}
-
-// Encode writes the YAML encoding of v to the stream.
-// If multiple items are encoded to the stream, the
-// second and subsequent document will be preceded
-// with a "---" document separator, but the first will not.
-//
-// See the documentation for Marshal for details about the conversion of Go
-// values to YAML.
-func (e *Encoder) Encode(v any) (err error) {
-	defer handleErr(&err)
-	e.encoder.marshalDoc("", reflect.ValueOf(v))
-
-	return nil
 }
 
 // Encode encodes value v and stores its representation in n.
@@ -266,24 +121,6 @@ func (n *Node) Encode(v any) (err error) {
 	defer p.destroy()
 	doc := p.parse()
 	*n = *doc.Content[0]
-
-	return nil
-}
-
-// SetIndent changes the used indentation used when encoding.
-func (e *Encoder) SetIndent(spaces int) {
-	if spaces < 0 {
-		panic("yaml: cannot indent to a negative number of spaces")
-	}
-
-	e.encoder.indent = spaces
-}
-
-// Close closes the encoder by writing any remaining data.
-// It does not write a stream terminating string "...".
-func (e *Encoder) Close() (err error) {
-	defer handleErr(&err)
-	e.encoder.finish()
 
 	return nil
 }

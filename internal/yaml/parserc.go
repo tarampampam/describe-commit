@@ -4,44 +4,6 @@ import (
 	"bytes"
 )
 
-// The parser implements the following grammar:
-//
-// stream               ::= STREAM-START implicit_document? explicit_document* STREAM-END
-// implicit_document    ::= block_node DOCUMENT-END*
-// explicit_document    ::= DIRECTIVE* DOCUMENT-START block_node? DOCUMENT-END*
-// block_node_or_indentless_sequence    ::=
-//                          ALIAS
-//                          | properties (block_content | indentless_block_sequence)?
-//                          | block_content
-//                          | indentless_block_sequence
-// block_node           ::= ALIAS
-//                          | properties block_content?
-//                          | block_content
-// flow_node            ::= ALIAS
-//                          | properties flow_content?
-//                          | flow_content
-// properties           ::= TAG ANCHOR? | ANCHOR TAG?
-// block_content        ::= block_collection | flow_collection | SCALAR
-// flow_content         ::= flow_collection | SCALAR
-// block_collection     ::= block_sequence | block_mapping
-// flow_collection      ::= flow_sequence | flow_mapping
-// block_sequence       ::= BLOCK-SEQUENCE-START (BLOCK-ENTRY block_node?)* BLOCK-END
-// indentless_sequence  ::= (BLOCK-ENTRY block_node?)+
-// block_mapping        ::= BLOCK-MAPPING_START
-//                          ((KEY block_node_or_indentless_sequence?)?
-//                          (VALUE block_node_or_indentless_sequence?)?)*
-//                          BLOCK-END
-// flow_sequence        ::= FLOW-SEQUENCE-START
-//                          (flow_sequence_entry FLOW-ENTRY)*
-//                          flow_sequence_entry?
-//                          FLOW-SEQUENCE-END
-// flow_sequence_entry  ::= flow_node | KEY flow_node? (VALUE flow_node?)?
-// flow_mapping         ::= FLOW-MAPPING-START
-//                          (flow_mapping_entry FLOW-ENTRY)*
-//                          flow_mapping_entry?
-//                          FLOW-MAPPING-END
-// flow_mapping_entry   ::= flow_node | KEY flow_node? (VALUE flow_node?)?
-
 // Peek the next token in the token queue.
 func peek_token(parser *yaml_parser_t) *yaml_token_t {
 	if parser.token_available || yaml_parser_fetch_more_tokens(parser) {
@@ -62,7 +24,7 @@ func yaml_parser_unfold_comments(parser *yaml_parser_t, token *yaml_token_t) {
 		comment := &parser.comments[parser.comments_head]
 		if len(comment.head) > 0 {
 			if token.typ == yaml_BLOCK_END_TOKEN {
-				// No heads on ends, so keep comment.head for a follow up token.
+				// No heads on ends, so keep comment.head for a follow-up token.
 				break
 			}
 
@@ -282,7 +244,7 @@ func yaml_parser_parse_document_start(parser *yaml_parser_t, event *yaml_event_t
 		if len(parser.head_comment) > 0 {
 			// [Go] Scan the header comment backwards, and if an empty line is found, break
 			//      the header so the part before the last empty line goes into the
-			//      document header, while the bottom of it goes into a follow up event.
+			//      document header, while the bottom of it goes into a follow-up event.
 			for i := len(parser.head_comment) - 1; i > 0; i-- {
 				if parser.head_comment[i] == '\n' {
 					if i == len(parser.head_comment)-1 {

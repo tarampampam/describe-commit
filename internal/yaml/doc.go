@@ -2,7 +2,8 @@
 //
 // It contains the source code for the `github.com/go-yaml/yaml` package.
 //
-// This is a copy of the original package (v3.0.1) with some code removed.
+// This is a copy of the original package (v3.0.1) with some code removed (reported by the
+// `deadcode` tool: https://pkg.go.dev/golang.org/x/tools@v0.30.0/cmd/deadcode)
 //
 // It has been placed here to eliminate the need to download the package from remote galaxies.
 // Updating this package is not necessary, as it is highly stable and mature.
