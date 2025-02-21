@@ -1,8 +1,9 @@
 package cmd_test
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -56,9 +57,12 @@ func assertEqual[T comparable](t *testing.T, got, want T, msgPrefix ...string) {
 	}
 }
 
-// seededRand is a global pseudo-random number generator seeded with the current time.
-// It ensures different outputs on each program run.
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec
+// rnd is a global pseudo-random number generator seeded with the current time.
+var (
+	rndSeed = time.Now().UnixNano()
+	rnd     = rand.New(rand.NewPCG(uint64(rndSeed), uint64(rndSeed>>32))) // nolint:gosec
+	rndMu   sync.Mutex
+)
 
 // randomString generates a random alphanumeric string of the specified length.
 // Uses a predefined character set and a seeded random source for variability.
@@ -67,9 +71,11 @@ func randomString(strLen int) string {
 
 	var b = make([]byte, strLen)
 
+	rndMu.Lock()
 	for i := range b {
-		b[i] = charset[seededRand.Intn(len(charset))]
+		b[i] = charset[rnd.IntN(len(charset))]
 	}
+	rndMu.Unlock()
 
 	return string(b)
 }
