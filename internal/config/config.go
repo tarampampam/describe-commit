@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"gopkg.in/yaml.v3"
+	"gh.tarampamp.am/describe-commit/internal/yaml"
 )
 
 // Config is used to unmarshal the configuration file content.
