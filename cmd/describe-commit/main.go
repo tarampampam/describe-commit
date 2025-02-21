@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"gh.tarampamp.am/describe-commit/internal/cli"
@@ -23,6 +25,10 @@ func run() error {
 	var ctx, cancel = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
+	if len(os.Args) < 1 {
+		return errors.New("missing application name")
+	}
+
 	// run the CLI application
-	return cli.NewApp().Run(ctx, os.Args)
+	return cli.NewApp(filepath.Base(os.Args[0])).Run(ctx, os.Args[1:])
 }
