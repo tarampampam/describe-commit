@@ -21,6 +21,9 @@ type Command struct {
 	Output      io.Writer // Output writer, defaults to os.Stdout if not set.
 
 	Action func(_ context.Context, _ *Command, args []string) error // Action function executed when the command runs.
+
+	appendBuiltInFlagsOnce bool // flag to ensure built-in flags are appended only once
+	showHelp, showVersion  bool // built-in flags for displaying help and version
 }
 
 // Help generates and returns a formatted help message for the command.
@@ -128,14 +131,14 @@ func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funle
 		c.Output = os.Stdout
 	}
 
-	var showHelp, showVersion bool // built-in flags for displaying help and version
+	// append built-in flags only once
+	if !c.appendBuiltInFlagsOnce {
+		c.Flags = append(c.Flags,
+			&Flag[bool]{Names: []string{"help", "h"}, Usage: "Show help", Value: &c.showHelp},
+			&Flag[bool]{Names: []string{"version", "v"}, Usage: "Print the version", Value: &c.showVersion},
+		)
 
-	// register built-in flags
-	for _, inFlag := range [...]Flagger{
-		&Flag[bool]{Names: []string{"help", "h"}, Usage: "Show help", Value: &showHelp},
-		&Flag[bool]{Names: []string{"version", "v"}, Usage: "Print the version", Value: &showVersion},
-	} {
-		inFlag.Apply(set)
+		c.appendBuiltInFlagsOnce = true
 	}
 
 	// register flags in the flag set
@@ -154,14 +157,14 @@ func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funle
 	}
 
 	// if help flag is set, print help message and exit (before flags validation and other actions)
-	if showHelp {
+	if c.showHelp {
 		_, err := fmt.Fprintf(c.Output, "%s\n", c.Help())
 
 		return err
 	}
 
 	// if version flag is set, print version information and exit
-	if showVersion {
+	if c.showVersion {
 		var (
 			runtimeVersion = runtime.Version()
 			out            string
