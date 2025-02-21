@@ -1,6 +1,7 @@
 package yaml
 
 import (
+	"errors"
 	"io"
 )
 
@@ -81,7 +82,7 @@ func yaml_parser_update_raw_buffer(parser *yaml_parser_t) bool {
 	size_read, err := parser.read_handler(parser, parser.raw_buffer[len(parser.raw_buffer):cap(parser.raw_buffer)])
 	parser.raw_buffer = parser.raw_buffer[:len(parser.raw_buffer)+size_read]
 
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		parser.eof = true
 	} else if err != nil {
 		return yaml_parser_set_reader_error(parser, "input error: "+err.Error(), parser.offset, -1)
@@ -363,23 +364,20 @@ func yaml_parser_update_buffer(parser *yaml_parser_t, length int) bool {
 			parser.offset += width
 
 			// Finally put the character into the buffer.
-			if value <= 0x7F {
-				// 0000 0000-0000 007F . 0xxxxxxx
+			switch {
+			case value <= 0x7F:
 				parser.buffer[buffer_len+0] = byte(value)
 				buffer_len += 1
-			} else if value <= 0x7FF {
-				// 0000 0080-0000 07FF . 110xxxxx 10xxxxxx
+			case value <= 0x7FF:
 				parser.buffer[buffer_len+0] = byte(0xC0 + (value >> 6))
 				parser.buffer[buffer_len+1] = byte(0x80 + (value & 0x3F))
 				buffer_len += 2
-			} else if value <= 0xFFFF {
-				// 0000 0800-0000 FFFF . 1110xxxx 10xxxxxx 10xxxxxx
+			case value <= 0xFFFF:
 				parser.buffer[buffer_len+0] = byte(0xE0 + (value >> 12))
 				parser.buffer[buffer_len+1] = byte(0x80 + ((value >> 6) & 0x3F))
 				parser.buffer[buffer_len+2] = byte(0x80 + (value & 0x3F))
 				buffer_len += 3
-			} else {
-				// 0001 0000-0010 FFFF . 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+			default:
 				parser.buffer[buffer_len+0] = byte(0xF0 + (value >> 18))
 				parser.buffer[buffer_len+1] = byte(0x80 + ((value >> 12) & 0x3F))
 				parser.buffer[buffer_len+2] = byte(0x80 + ((value >> 6) & 0x3F))

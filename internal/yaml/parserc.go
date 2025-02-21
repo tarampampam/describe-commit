@@ -20,7 +20,8 @@ func peek_token(parser *yaml_parser_t) *yaml_token_t {
 // comments behind the position of the provided token into the respective
 // top-level comment slices in the parser.
 func yaml_parser_unfold_comments(parser *yaml_parser_t, token *yaml_token_t) {
-	for parser.comments_head < len(parser.comments) && token.start_mark.index >= parser.comments[parser.comments_head].token_mark.index {
+	for parser.comments_head < len(parser.comments) &&
+		token.start_mark.index >= parser.comments[parser.comments_head].token_mark.index {
 		comment := &parser.comments[parser.comments_head]
 		if len(comment.head) > 0 {
 			if token.typ == yaml_BLOCK_END_TOKEN {
@@ -87,7 +88,13 @@ func yaml_parser_set_parser_error(parser *yaml_parser_t, problem string, problem
 	return false
 }
 
-func yaml_parser_set_parser_error_context(parser *yaml_parser_t, context string, context_mark yaml_mark_t, problem string, problem_mark yaml_mark_t) bool {
+func yaml_parser_set_parser_error_context(
+	parser *yaml_parser_t,
+	context string,
+	context_mark yaml_mark_t,
+	problem string,
+	problem_mark yaml_mark_t,
+) bool {
 	parser.error = yaml_PARSER_ERROR
 	parser.context = context
 	parser.context_mark = context_mark
@@ -1335,7 +1342,12 @@ func yaml_parser_process_directives(parser *yaml_parser_t,
 }
 
 // Append a tag directive to the directives stack.
-func yaml_parser_append_tag_directive(parser *yaml_parser_t, value yaml_tag_directive_t, allow_duplicates bool, mark yaml_mark_t) bool {
+func yaml_parser_append_tag_directive(
+	parser *yaml_parser_t,
+	value yaml_tag_directive_t,
+	allow_duplicates bool,
+	mark yaml_mark_t,
+) bool {
 	for i := range parser.tag_directives {
 		if bytes.Equal(value.handle, parser.tag_directives[i].handle) {
 			if allow_duplicates {

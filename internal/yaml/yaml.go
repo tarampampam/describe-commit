@@ -99,11 +99,6 @@ func (n *Node) Decode(v any) (err error) {
 	return nil
 }
 
-// An Encoder writes YAML values to an output stream.
-type Encoder struct {
-	encoder *encoder
-}
-
 // Encode encodes value v and stores its representation in n.
 //
 // See the documentation for Marshal for details about the
@@ -255,8 +250,18 @@ type Node struct {
 
 // IsZero returns whether the node has all of its fields unset.
 func (n *Node) IsZero() bool {
-	return n.Kind == 0 && n.Style == 0 && n.Tag == "" && n.Value == "" && n.Anchor == "" && n.Alias == nil && n.Content == nil &&
-		n.HeadComment == "" && n.LineComment == "" && n.FootComment == "" && n.Line == 0 && n.Column == 0
+	return n.Kind == 0 &&
+		n.Style == 0 &&
+		n.Tag == "" &&
+		n.Value == "" &&
+		n.Anchor == "" &&
+		n.Alias == nil &&
+		n.Content == nil &&
+		n.HeadComment == "" &&
+		n.LineComment == "" &&
+		n.FootComment == "" &&
+		n.Line == 0 &&
+		n.Column == 0
 }
 
 // LongTag returns the long form of the tag that indicates the data type for

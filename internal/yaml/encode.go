@@ -612,7 +612,10 @@ func (e *encoder) node(node *Node, tail string) {
 			style = yaml_DOUBLE_QUOTED_SCALAR_STYLE
 		}
 
-		e.emitScalar(value, node.Anchor, tag, style, []byte(node.HeadComment), []byte(node.LineComment), []byte(node.FootComment), []byte(tail))
+		e.emitScalar(
+			value, node.Anchor, tag, style,
+			[]byte(node.HeadComment), []byte(node.LineComment), []byte(node.FootComment), []byte(tail),
+		)
 	default:
 		failf("cannot encode node with unknown kind %d", node.Kind)
 	}

@@ -73,7 +73,9 @@ var longTags = make(map[string]string)
 var shortTags = make(map[string]string)
 
 func init() {
-	for _, stag := range []string{nullTag, boolTag, strTag, intTag, floatTag, timestampTag, seqTag, mapTag, binaryTag, mergeTag} {
+	for _, stag := range []string{
+		nullTag, boolTag, strTag, intTag, floatTag, timestampTag, seqTag, mapTag, binaryTag, mergeTag,
+	} {
 		ltag := longTag(stag)
 		longTags[stag] = ltag
 		shortTags[ltag] = stag

@@ -282,72 +282,6 @@ const (
 	_ = yaml_MAP_TAG // The default mapping tag is !!map.
 )
 
-type yaml_node_type_t int
-
-// An element of a sequence node.
-type yaml_node_item_t int
-
-// An element of a mapping node.
-type yaml_node_pair_t struct {
-	key   int // The key of the element.
-	value int // The value of the element.
-}
-
-// The node structure.
-type yaml_node_t struct {
-	typ yaml_node_type_t // The node type.
-	tag []byte           // The node tag.
-
-	// The node data.
-
-	// The scalar parameters (for yaml_SCALAR_NODE).
-	scalar struct {
-		value  []byte              // The scalar value.
-		length int                 // The length of the scalar value.
-		style  yaml_scalar_style_t // The scalar style.
-	}
-
-	// The sequence parameters (for YAML_SEQUENCE_NODE).
-	sequence struct {
-		items_data []yaml_node_item_t    // The stack of sequence items.
-		style      yaml_sequence_style_t // The sequence style.
-	}
-
-	// The mapping parameters (for yaml_MAPPING_NODE).
-	mapping struct {
-		pairs_data  []yaml_node_pair_t   // The stack of mapping pairs (key, value).
-		pairs_start *yaml_node_pair_t    // The beginning of the stack.
-		pairs_end   *yaml_node_pair_t    // The end of the stack.
-		pairs_top   *yaml_node_pair_t    // The top of the stack.
-		style       yaml_mapping_style_t // The mapping style.
-	}
-
-	start_mark yaml_mark_t // The beginning of the node.
-	end_mark   yaml_mark_t // The end of the node.
-
-}
-
-// The document structure.
-type yaml_document_t struct {
-
-	// The document nodes.
-	nodes []yaml_node_t
-
-	// The version directive.
-	version_directive *yaml_version_directive_t
-
-	// The list of tag directives.
-	tag_directives_data  []yaml_tag_directive_t
-	tag_directives_start int // The beginning of the tag directives list.
-	tag_directives_end   int // The end of the tag directives list.
-
-	start_implicit int // Is the document start indicator implicit?
-	end_implicit   int // Is the document end indicator implicit?
-
-	// The start/end of the document.
-	start_mark, end_mark yaml_mark_t
-}
-
 // The prototype of a read handler.
 //
 // The read handler is called when the parser needs to read more bytes from the
@@ -405,13 +339,6 @@ const (
 	yaml_PARSE_FLOW_MAPPING_EMPTY_VALUE_STATE          // Expect an empty value of a flow mapping.
 	yaml_PARSE_END_STATE                               // Expect nothing.
 )
-
-// This structure holds aliases data.
-type yaml_alias_data_t struct {
-	anchor []byte      // The anchor.
-	index  int         // The node id.
-	mark   yaml_mark_t // The anchor mark.
-}
 
 // The parser structure.
 //
@@ -495,12 +422,6 @@ type yaml_parser_t struct {
 	states         []yaml_parser_state_t  // The parser states stack.
 	marks          []yaml_mark_t          // The stack of marks.
 	tag_directives []yaml_tag_directive_t // The list of TAG directives.
-
-	// Dumper stuff
-
-	aliases []yaml_alias_data_t // The alias data.
-
-	document *yaml_document_t // The currently parsed document.
 }
 
 type yaml_comment_t struct {
@@ -576,14 +497,12 @@ type yaml_emitter_t struct {
 
 	write_handler yaml_write_handler_t // Write handler.
 
-	output_buffer *[]byte   // String output data.
-	output_writer io.Writer // File output data.
+	output_buffer *[]byte // String output data.
 
 	buffer     []byte // The working buffer.
 	buffer_pos int    // The current position of the buffer.
 
-	raw_buffer     []byte // The raw buffer.
-	raw_buffer_pos int    // The current position of the buffer.
+	raw_buffer []byte // The raw buffer.
 
 	encoding yaml_encoding_t // The stream encoding.
 
@@ -653,20 +572,4 @@ type yaml_emitter_t struct {
 	tail_comment []byte
 
 	key_line_comment []byte
-
-	// Dumper stuff
-
-	opened bool // If the stream was already opened?
-	closed bool // If the stream was already closed?
-
-	// The information associated with the document nodes.
-	anchors *struct {
-		references int  // The number of references.
-		anchor     int  // The anchor id.
-		serialized bool // If the node has been emitted?
-	}
-
-	last_anchor_id int // The last assigned anchor id.
-
-	document *yaml_document_t // The currently emitted document.
 }
