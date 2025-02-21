@@ -24,7 +24,7 @@ type Command struct {
 }
 
 // Help generates and returns a formatted help message for the command.
-func (c *Command) Help() string {
+func (c *Command) Help() string { //nolint:funlen
 	const offset = "   " // indentation offset for formatting
 
 	var b strings.Builder
@@ -110,7 +110,7 @@ func (c *Command) Help() string {
 }
 
 // Run executes the command with the provided arguments.
-func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funlen
+func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funlen,gocyclo,contextcheck
 	if ctx == nil {
 		ctx = context.Background()
 	} else if err := ctx.Err(); err != nil {

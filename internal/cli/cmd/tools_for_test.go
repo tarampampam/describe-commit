@@ -1,7 +1,6 @@
 package cmd_test
 
 import (
-	"fmt"
 	"math/rand"
 	"strings"
 	"testing"
@@ -41,28 +40,6 @@ func assertContains(t *testing.T, got string, want ...string) {
 	}
 }
 
-// assertSlicesEqual checks if two slices are equal in both length and content.
-// It provides an optional message prefix for more detailed failure messages.
-func assertSlicesEqual[T comparable](t *testing.T, got, want []T, msgPrefix ...string) {
-	t.Helper()
-
-	var p string
-
-	if len(msgPrefix) > 0 {
-		p = msgPrefix[0] + ": "
-	}
-
-	if len(got) != len(want) {
-		t.Errorf("%slices have different lengths: got %d, want %d", p, len(got), len(want))
-
-		return
-	}
-
-	for i := range got {
-		assertEqual(t, got[i], want[i], fmt.Sprintf("%sindex %d", p, i))
-	}
-}
-
 // assertEqual checks if two values of a comparable type are equal.
 // If they are not, the test fails and includes an optional message prefix.
 func assertEqual[T comparable](t *testing.T, got, want T, msgPrefix ...string) {
@@ -81,7 +58,7 @@ func assertEqual[T comparable](t *testing.T, got, want T, msgPrefix ...string) {
 
 // seededRand is a global pseudo-random number generator seeded with the current time.
 // It ensures different outputs on each program run.
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+var seededRand = rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec
 
 // randomString generates a random alphanumeric string of the specified length.
 // Uses a predefined character set and a seeded random source for variability.

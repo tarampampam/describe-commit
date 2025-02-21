@@ -105,7 +105,7 @@ func TestCommand_Run(t *testing.T) {
 		var c = &cmd.Command{}
 
 		assertNoError(t, c.Run(ctx, nil))
-		assertNoError(t, c.Run(nil, nil))
+		assertNoError(t, c.Run(nil, nil)) //nolint:contextcheck,staticcheck
 	})
 
 	t.Run("help (built-in flag)", func(t *testing.T) {

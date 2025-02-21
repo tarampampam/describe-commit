@@ -143,7 +143,7 @@ func (f *Flag[T]) Help() (names string, usage string) {
 	return
 }
 
-// predefined errors for invalid flag values
+// predefined errors for invalid flag values.
 var (
 	errInvalidBool     = errors.New("must be a valid boolean value (e.g., true/false, 1/0)")
 	errInvalidInt      = errors.New("must contain only digits with an optional leading '-'")
@@ -153,7 +153,7 @@ var (
 )
 
 // parseString converts a string to the corresponding flag type.
-func (f *Flag[T]) parseString(s string) (T, error) {
+func (f *Flag[T]) parseString(s string) (T, error) { //nolint:gocyclo
 	var empty T // default zero value of type T
 
 	switch any(empty).(type) {

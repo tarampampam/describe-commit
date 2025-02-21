@@ -58,6 +58,7 @@ func (o *options) Validate() error {
 	if o.MaxOutputTokens <= 1 {
 		return errors.New("max output tokens must be greater than 1")
 	}
+
 	if v := o.AIProviderName; !ai.IsProviderSupported(v) {
 		return fmt.Errorf("unsupported AI provider: %s", v)
 	}
@@ -66,6 +67,7 @@ func (o *options) Validate() error {
 		if o.Providers.Gemini.ApiKey == "" {
 			return errors.New("gemini API key is required")
 		}
+
 		if o.Providers.Gemini.ModelName == "" {
 			return errors.New("gemini model name is required")
 		}
@@ -75,6 +77,7 @@ func (o *options) Validate() error {
 		if o.Providers.OpenAI.ApiKey == "" {
 			return errors.New("OpenAI API key is required")
 		}
+
 		if o.Providers.OpenAI.ModelName == "" {
 			return errors.New("OpenAI model name is required")
 		}

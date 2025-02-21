@@ -23,7 +23,7 @@ type App struct {
 	opt options
 }
 
-func NewApp(name string) *App {
+func NewApp(name string) *App { //nolint:funlen
 	var app = App{
 		cmd: cmd.Command{
 			Name:        name,
@@ -130,7 +130,7 @@ func NewApp(name string) *App {
 		setIfSourceNotNil(&app.opt.ConfigFilePath, configFile.Value)
 
 		// override the default options with the configuration file values, if they are set
-		if configFile.Value != nil && *configFile.Value != "" {
+		if configFile.Value != nil && *configFile.Value != "" { //nolint:nestif
 			if err := cfg.FromFile(*configFile.Value); err == nil {
 				setIfSourceNotNil(&app.opt.ShortMessageOnly, cfg.ShortMessageOnly)
 				setIfSourceNotNil(&app.opt.CommitHistoryLength, cfg.CommitHistoryLength)
@@ -234,7 +234,7 @@ func (a *App) Run(ctx context.Context, args []string) error { return a.cmd.Run(c
 func (a *App) Help() string { return a.cmd.Help() }
 
 // run in the main logic of the application.
-func (a *App) run(ctx context.Context, workingDir string) error {
+func (a *App) run(ctx context.Context, workingDir string) error { //nolint:funlen
 	debug.Printf("AI provider: %s", a.opt.AIProviderName)
 
 	var provider ai.Provider

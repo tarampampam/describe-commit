@@ -41,6 +41,7 @@ var _ Group = (*group)(nil) // ensure that group implements Group
 // time Wait returns, whichever occurs first.
 func New(ctx context.Context) (Group, context.Context) {
 	ctx, cancel := context.WithCancelCause(ctx)
+
 	return &group{ctx: ctx, cancel: cancel}, ctx
 }
 
