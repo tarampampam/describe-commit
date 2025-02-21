@@ -41,8 +41,8 @@ type (
 		Action       func(*Command, T) error // an action to run when the flag is set
 		ValueSetFrom flagValueSource         // the source of the value (from where the value was taken)
 
-		// the actual value will be placed here after parsing.
-		// a pointer is used to allow the value to be set externally
+		// the actual value will be placed here after parsing. a pointer is used to allow the value
+		// to be set externally
 		Value *T
 	}
 )
@@ -83,7 +83,7 @@ func (f *Flag[T]) IsSet() bool {
 func (f *Flag[T]) Help() (names string, usage string) {
 	var b strings.Builder
 
-	b.Grow(len(f.Usage) + 64) //nolint:mnd
+	b.Grow(len(f.Usage))
 
 	for i, name := range f.Names {
 		if i > 0 {
@@ -106,17 +106,24 @@ func (f *Flag[T]) Help() (names string, usage string) {
 	names = b.String()
 
 	b.Reset()
-
 	b.WriteString(f.Usage)
 
-	if empty := *new(T); f.Default != empty {
-		b.WriteString(" (default: ")
+	if f.Default != *new(T) {
+		if b.Len() > 0 {
+			b.WriteRune(' ')
+		}
+
+		b.WriteString("(default: ")
 		b.WriteString(fmt.Sprintf("%v", f.Default))
 		b.WriteRune(')')
 	}
 
 	if len(f.EnvVars) > 0 {
-		b.WriteString(" [")
+		if b.Len() > 0 {
+			b.WriteRune(' ')
+		}
+
+		b.WriteRune('[')
 
 		for i, envVar := range f.EnvVars {
 			if i > 0 {
@@ -135,6 +142,17 @@ func (f *Flag[T]) Help() (names string, usage string) {
 	return
 }
 
+var (
+	errInvalidBool = errors.New("must be a valid boolean value (e.g., true/false, 1/0, TRUE/FALSE, t/f)")
+	errInvalidInt  = errors.New("must contain only digits with an optional leading '-' for negative values " +
+		"(e.g., 42, -42)")
+	errInvalidUint  = errors.New("must contain only digits (positive numbers only; e.g., 42)")
+	errInvalidFloat = errors.New("must contain only digits with an optional decimal point " +
+		"(e.g., 3.14, -3.14) and leading '-' for negative values")
+	errInvalidDuration = errors.New("must be a valid Go duration string (valid time units are: ns, us, " +
+		"ms, s, m, h; e.g., 1h30m, -2s, 500ms)")
+)
+
 // parseString parses the string value and returns the value of the generic type.
 func (f *Flag[T]) parseString(s string) (T, error) {
 	var empty T // readonly value
@@ -143,21 +161,21 @@ func (f *Flag[T]) parseString(s string) (T, error) {
 	case bool:
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			return empty, err
+			return empty, errInvalidBool
 		}
 
 		return any(v).(T), nil
 	case int:
 		v, err := strconv.Atoi(s)
 		if err != nil {
-			return empty, err
+			return empty, errInvalidInt
 		}
 
 		return any(v).(T), nil
 	case int64:
 		v, err := strconv.ParseInt(s, 10, 64)
 		if err != nil {
-			return empty, err
+			return empty, errInvalidInt
 		}
 
 		return any(v).(T), nil
@@ -166,34 +184,34 @@ func (f *Flag[T]) parseString(s string) (T, error) {
 	case uint:
 		v, err := strconv.ParseUint(s, 10, 64)
 		if err != nil {
-			return empty, err
+			return empty, errInvalidUint
 		}
 
 		return any(uint(v)).(T), nil
 	case uint64:
 		v, err := strconv.ParseUint(s, 10, 64)
 		if err != nil {
-			return empty, err
+			return empty, errInvalidUint
 		}
 
 		return any(v).(T), nil
 	case float64:
 		v, err := strconv.ParseFloat(s, 64)
 		if err != nil {
-			return empty, err
+			return empty, errInvalidFloat
 		}
 
 		return any(v).(T), nil
 	case time.Duration:
 		v, err := time.ParseDuration(s)
 		if err != nil {
-			return empty, err
+			return empty, errInvalidDuration
 		}
 
 		return any(v).(T), nil
 	}
 
-	return empty, fmt.Errorf("unsupported flag type: %T", empty)
+	return empty, fmt.Errorf("unsupported flag type: %T", empty) // will never happen
 }
 
 // envValue returns the value from the environment variable if it was set.
@@ -233,53 +251,47 @@ func (f *Flag[T]) Apply(s *flag.FlagSet) error {
 	// set the default flag value
 	f.setValue(f.Default, FlagValueSourceDefault)
 
-	var envParsingErr error
-
-	// get the value from the environment variable (before flag parsing)
-	if v, found, envName, err := f.envValue(); found && err == nil {
+	// get the value from the environment variable (before flag parsing). parsing errors are ignored
+	if v, found, _, err := f.envValue(); found && err == nil {
 		f.setValue(v, FlagValueSourceEnv)
-	} else if err != nil {
-		// store the error for later
-		envParsingErr = fmt.Errorf("failed to parse the environment variable %s: %w", envName, err)
 	}
 
 	switch any(*new(T)).(type) {
 	case bool:
 		var fn = func(string) error {
-
 			// since we have a boolean flag, we need to set the value to true if the flag was provided
 			// without taking into account the value
 			f.setValue(any(true).(T), FlagValueSourceFlag)
 
-			return envParsingErr
+			return nil
 		}
 
 		for _, name := range f.Names {
 			s.BoolFunc(name, f.Usage, fn)
 		}
 	case
-			int,
-			int64,
-			string,
-			uint,
-			uint64,
-			float64,
-			time.Duration:
+		int,
+		int64,
+		string,
+		uint,
+		uint64,
+		float64,
+		time.Duration:
 		var fn = func(in string) error {
-			if v, err := f.parseString(in); err == nil {
+			if v, parsingErr := f.parseString(in); parsingErr == nil {
 				f.setValue(v, FlagValueSourceFlag)
 			} else {
-				return err
+				return parsingErr
 			}
 
-			return envParsingErr
+			return nil
 		}
 
 		for _, name := range f.Names {
 			s.Func(name, f.Usage, fn)
 		}
 	default:
-		return fmt.Errorf("unsupported flag type: %T", f.Default)
+		return fmt.Errorf("unsupported flag type: %T", f.Default) // will never happen
 	}
 
 	return nil

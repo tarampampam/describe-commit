@@ -25,8 +25,10 @@ type App struct {
 func NewApp(name string) *App {
 	var app = App{
 		cmd: cmd.Command{
-			Name:    name,
-			Version: version.Version(),
+			Name:        name,
+			Description: "This tool uses AI to generate a commit message based on the changes made.",
+			Usage:       "[<options>] [<dir-path>]",
+			Version:     version.Version(),
 		},
 		opt: newOptionsWithDefaults(),
 	}

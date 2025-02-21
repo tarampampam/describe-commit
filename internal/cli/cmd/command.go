@@ -12,11 +12,13 @@ import (
 )
 
 type Command struct {
-	Name    string
-	Version string
-	Output  io.Writer
-	Flags   []Flagger
-	Action  func(_ context.Context, _ *Command, args []string) error
+	Name        string
+	Description string
+	Usage       string
+	Version     string
+	Output      io.Writer
+	Flags       []Flagger
+	Action      func(_ context.Context, _ *Command, args []string) error
 
 	runOnce bool
 }
@@ -26,28 +28,44 @@ func (c *Command) Help() string {
 
 	var b strings.Builder
 
-	b.Grow(1024) //nolint:mnd // preallocate some memory
+	b.Grow(len(c.Description) + len(c.Name) + len(c.Version) + len(c.Flags)*64)
 
-	b.WriteString("Description:\n")
-	b.WriteString(offset)
-	b.WriteString("This tool uses AI to generate a commit message based on the changes made.\n\n")
+	if c.Description != "" {
+		b.WriteString("Description:\n")
+		b.WriteString(offset)
+		b.WriteString(c.Description)
+	}
 
 	if c.Name != "" {
+		if b.Len() > 0 {
+			b.WriteString("\n\n")
+		}
+
 		b.WriteString("Usage:\n")
 		b.WriteString(offset)
 		b.WriteString(c.Name)
-		b.WriteString(" [<options>] [<dir-path>]")
+
+		if c.Usage != "" {
+			b.WriteRune(' ')
+			b.WriteString(c.Usage)
+		}
 	}
 
 	if c.Version != "" {
-		b.WriteString("\n\n")
+		if b.Len() > 0 {
+			b.WriteString("\n\n")
+		}
+
 		b.WriteString("Version:\n")
 		b.WriteString(offset)
 		b.WriteString(c.Version)
 	}
 
 	if len(c.Flags) > 0 {
-		b.WriteString("\n\n")
+		if b.Len() > 0 {
+			b.WriteString("\n\n")
+		}
+
 		b.WriteString("Options:\n")
 
 		var (
