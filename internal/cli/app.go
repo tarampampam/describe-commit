@@ -10,12 +10,13 @@ import (
 	"gh.tarampamp.am/describe-commit/internal/ai"
 	"gh.tarampamp.am/describe-commit/internal/cli/cmd"
 	"gh.tarampamp.am/describe-commit/internal/config"
+	"gh.tarampamp.am/describe-commit/internal/debug"
 	"gh.tarampamp.am/describe-commit/internal/errgroup"
 	"gh.tarampamp.am/describe-commit/internal/git"
 	"gh.tarampamp.am/describe-commit/internal/version"
 )
 
-//go:generate go run app_readme.go
+//go:generate go run ./generate/readme.go
 
 type App struct {
 	cmd cmd.Command
@@ -147,7 +148,7 @@ func NewApp(name string) *App {
 					setIfSourceNotNil(&app.opt.Providers.OpenAI.ModelName, sub.ModelName)
 				}
 			} else {
-				debugf("failed to load the configuration file: %s", err)
+				debug.Printf("failed to load the configuration file: %s", err)
 			}
 		}
 
@@ -234,7 +235,7 @@ func (a *App) Help() string { return a.cmd.Help() }
 
 // run in the main logic of the application.
 func (a *App) run(ctx context.Context, workingDir string) error {
-	debugf("AI provider: %s", a.opt.AIProviderName)
+	debug.Printf("AI provider: %s", a.opt.AIProviderName)
 
 	var provider ai.Provider
 
@@ -253,7 +254,7 @@ func (a *App) run(ctx context.Context, workingDir string) error {
 		return fmt.Errorf("unsupported AI provider: %s", a.opt.AIProviderName)
 	}
 
-	debugf("working directory: %s", workingDir)
+	debug.Printf("working directory: %s", workingDir)
 
 	var (
 		eg, _            = errgroup.New(ctx)
@@ -280,8 +281,8 @@ func (a *App) run(ctx context.Context, workingDir string) error {
 		return err
 	}
 
-	debugf("changes:\n%s", changes)
-	debugf("commits:\n%s", commits)
+	debug.Printf("changes:\n%s", changes)
+	debug.Printf("commits:\n%s", commits)
 
 	if changes == "" {
 		return fmt.Errorf("no changes found in %s (probably nothing staged; try `git add -A`)", workingDir)
@@ -299,8 +300,8 @@ func (a *App) run(ctx context.Context, workingDir string) error {
 		return respErr
 	}
 
-	debugf("prompt:\n%s", response.Prompt)
-	debugf("answer:\n%s\n", response.Answer)
+	debug.Printf("prompt:\n%s", response.Prompt)
+	debug.Printf("answer:\n%s\n", response.Answer)
 
 	if _, err := fmt.Fprintln(os.Stdout, response.Answer); err != nil {
 		return err

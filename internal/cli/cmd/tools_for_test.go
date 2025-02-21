@@ -1,20 +1,23 @@
 package cmd_test
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"testing"
 	"time"
 )
 
+// assertNoError fails the test if err is not nil, indicating an unexpected error occurred.
 func assertNoError(t *testing.T, err error) {
 	t.Helper()
 
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Errorf("unexpected error: %v", err)
 	}
 }
 
+// assertErrorContains checks if the given error message contains the expected substring.
 func assertErrorContains(t *testing.T, err error, substr string) {
 	t.Helper()
 
@@ -24,11 +27,44 @@ func assertErrorContains(t *testing.T, err error, substr string) {
 		return
 	}
 
-	if !strings.Contains(err.Error(), substr) {
-		t.Fatalf("expected error to contain %q, got %v", substr, err)
+	assertContains(t, err.Error(), substr)
+}
+
+// assertContains checks if the given string contains at least one of the expected substrings.
+func assertContains(t *testing.T, got string, want ...string) {
+	t.Helper()
+
+	for _, w := range want {
+		if !strings.Contains(got, w) {
+			t.Errorf("expected %q to contain %q", got, w)
+		}
 	}
 }
 
+// assertSlicesEqual checks if two slices are equal in both length and content.
+// It provides an optional message prefix for more detailed failure messages.
+func assertSlicesEqual[T comparable](t *testing.T, got, want []T, msgPrefix ...string) {
+	t.Helper()
+
+	var p string
+
+	if len(msgPrefix) > 0 {
+		p = msgPrefix[0] + ": "
+	}
+
+	if len(got) != len(want) {
+		t.Errorf("%slices have different lengths: got %d, want %d", p, len(got), len(want))
+
+		return
+	}
+
+	for i := range got {
+		assertEqual(t, got[i], want[i], fmt.Sprintf("%sindex %d", p, i))
+	}
+}
+
+// assertEqual checks if two values of a comparable type are equal.
+// If they are not, the test fails and includes an optional message prefix.
 func assertEqual[T comparable](t *testing.T, got, want T, msgPrefix ...string) {
 	t.Helper()
 
@@ -43,8 +79,12 @@ func assertEqual[T comparable](t *testing.T, got, want T, msgPrefix ...string) {
 	}
 }
 
+// seededRand is a global pseudo-random number generator seeded with the current time.
+// It ensures different outputs on each program run.
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+// randomString generates a random alphanumeric string of the specified length.
+// Uses a predefined character set and a seeded random source for variability.
 func randomString(strLen int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 

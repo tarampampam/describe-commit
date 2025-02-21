@@ -11,31 +11,34 @@ import (
 	"unicode/utf8"
 )
 
+// Command represents a CLI command with flags, description, usage, and an action function.
 type Command struct {
-	Name        string
-	Description string
-	Usage       string
-	Version     string
-	Output      io.Writer
-	Flags       []Flagger
-	Action      func(_ context.Context, _ *Command, args []string) error
+	Name        string    // Name of the command.
+	Description string    // Brief description of the command.
+	Usage       string    // Usage example of the command.
+	Version     string    // Version of the command.
+	Flags       []Flagger // Collection of flags associated with the command.
+	Output      io.Writer // Output writer, defaults to os.Stdout if not set.
 
-	runOnce bool
+	Action func(_ context.Context, _ *Command, args []string) error // Action function executed when the command runs.
 }
 
+// Help generates and returns a formatted help message for the command.
 func (c *Command) Help() string {
-	const offset = "   "
+	const offset = "   " // indentation offset for formatting
 
 	var b strings.Builder
 
 	b.Grow(len(c.Description) + len(c.Name) + len(c.Version) + len(c.Flags)*64)
 
+	// append the description if available
 	if c.Description != "" {
 		b.WriteString("Description:\n")
 		b.WriteString(offset)
 		b.WriteString(c.Description)
 	}
 
+	// append usage information
 	if c.Name != "" {
 		if b.Len() > 0 {
 			b.WriteString("\n\n")
@@ -51,6 +54,7 @@ func (c *Command) Help() string {
 		}
 	}
 
+	// append version information
 	if c.Version != "" {
 		if b.Len() > 0 {
 			b.WriteString("\n\n")
@@ -61,6 +65,7 @@ func (c *Command) Help() string {
 		b.WriteString(c.Version)
 	}
 
+	// append flags if any exist
 	if len(c.Flags) > 0 {
 		if b.Len() > 0 {
 			b.WriteString("\n\n")
@@ -69,10 +74,11 @@ func (c *Command) Help() string {
 		b.WriteString("Options:\n")
 
 		var (
-			longest               int // longest flag names length
+			longest               int // stores the length of the longest flag name for alignment
 			flagNames, flagUsages = make([]string, len(c.Flags)), make([]string, len(c.Flags))
 		)
 
+		// iterate through flags to determine the longest name
 		for i, f := range c.Flags {
 			flagNames[i], flagUsages[i] = f.Help()
 
@@ -81,6 +87,7 @@ func (c *Command) Help() string {
 			}
 		}
 
+		// append flag information to the help message
 		for i, flagName := range flagNames {
 			if i > 0 {
 				b.WriteRune('\n')
@@ -89,6 +96,7 @@ func (c *Command) Help() string {
 			b.WriteString(offset)
 			b.WriteString(flagName)
 
+			// align flag descriptions
 			for j := utf8.RuneCountInString(flagName); j < longest; j++ {
 				b.WriteRune(' ')
 			}
@@ -101,61 +109,59 @@ func (c *Command) Help() string {
 	return b.String()
 }
 
+// Run executes the command with the provided arguments.
 func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funlen
-	defer func() { c.runOnce = true }()
-
-	if c.runOnce {
-		return fmt.Errorf("command %q has already been run", c.Name)
+	if ctx == nil {
+		ctx = context.Background()
+	} else if err := ctx.Err(); err != nil {
+		return err // do nothing if the context is already canceled
 	}
 
+	// create a new flag set for parsing command-line flags
 	var set = flag.NewFlagSet(c.Name, flag.ContinueOnError)
 
-	// mute everything from the standard library
+	// suppress output from the standard flag library to avoid unnecessary messages
 	set.SetOutput(io.Discard)
 
-	// set the default output if not set
+	// set default output if not defined
 	if c.Output == nil {
 		c.Output = os.Stdout
 	}
 
-	var showHelp, showVersion bool
+	var showHelp, showVersion bool // built-in flags for displaying help and version
 
-	// append "built-in" flags
-	c.Flags = append(c.Flags, []Flagger{
-		&Flag[bool]{
-			Names: []string{"help", "h"},
-			Usage: "Show help",
-			Value: &showHelp,
-		},
-		&Flag[bool]{
-			Names: []string{"version", "v"},
-			Usage: "Print the version",
-			Value: &showVersion,
-		},
-	}...)
-
-	// add flags to the set
-	for _, f := range c.Flags {
-		if err := f.Apply(set); err != nil {
-			return err
-		}
+	// register built-in flags
+	for _, inFlag := range [...]Flagger{
+		&Flag[bool]{Names: []string{"help", "h"}, Usage: "Show help", Value: &showHelp},
+		&Flag[bool]{Names: []string{"version", "v"}, Usage: "Print the version", Value: &showVersion},
+	} {
+		inFlag.Apply(set)
 	}
 
-	// parse the arguments
+	// register flags in the flag set
+	for _, f := range c.Flags {
+		f.Apply(set)
+	}
+
+	// parse command-line arguments
 	if err := set.Parse(args); err != nil {
-		if _, outErr := fmt.Fprintf(c.Output, "%s\n\n", c.Help()); outErr != nil {
+		// display help message in case of a parsing error
+		if _, outErr := fmt.Fprintf(c.Output, "%s\n", c.Help()); outErr != nil {
 			err = fmt.Errorf("%w: %w", outErr, err)
 		}
 
 		return err
 	}
 
-	// if help flag is set then show the help and exit (before flags validation and other actions)
+	// if help flag is set, print help message and exit (before flags validation and other actions)
 	if showHelp {
 		_, err := fmt.Fprintf(c.Output, "%s\n", c.Help())
 
 		return err
-	} else if showVersion { // and the same for the version flag
+	}
+
+	// if version flag is set, print version information and exit
+	if showVersion {
 		var (
 			runtimeVersion = runtime.Version()
 			out            string
@@ -172,22 +178,24 @@ func (c *Command) Run(ctx context.Context, args []string) error { //nolint:funle
 		return err
 	}
 
-	// check if the flag has the action and if it's set then run it
+	// validate and execute any flag-specific actions
 	for _, f := range c.Flags {
 		if !f.IsSet() {
 			continue
 		}
 
+		// validate the flag before running its action
 		if err := f.Validate(c); err != nil {
 			return err
 		}
 
+		// run the flag's action if applicable
 		if err := f.RunAction(c); err != nil {
 			return err
 		}
 	}
 
-	// run the "main" action, if set
+	// execute the main command action if set
 	if c.Action != nil {
 		return c.Action(ctx, c, set.Args())
 	}

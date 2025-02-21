@@ -145,7 +145,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, true, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -160,7 +161,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse([]string{"--test"}))
 		assertEqual(t, val, true, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceFlag, "unexpected value source")
@@ -176,7 +178,8 @@ func TestFlag_Apply(t *testing.T) {
 			set     = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, true, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceEnv, "unexpected value source")
@@ -192,7 +195,8 @@ func TestFlag_Apply(t *testing.T) {
 			set     = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, false, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -207,7 +211,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, 42, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -222,7 +227,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse([]string{"--test=42"}))
 		assertEqual(t, val, 42, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceFlag, "unexpected value source")
@@ -237,7 +243,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.ContinueOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertErrorContains(t, set.Parse([]string{"--test=foo"}), "must contain only digits with an optional leading")
 		assertEqual(t, val, 0, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -253,7 +260,8 @@ func TestFlag_Apply(t *testing.T) {
 			set     = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, 42, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceEnv, "unexpected value source")
@@ -269,7 +277,8 @@ func TestFlag_Apply(t *testing.T) {
 			set     = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, 0, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -284,7 +293,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, int64(42), "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -299,7 +309,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse([]string{"--test=-42"}))
 		assertEqual(t, val, int64(-42), "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceFlag, "unexpected value source")
@@ -314,7 +325,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.ContinueOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertErrorContains(t, set.Parse([]string{"--test=foo"}), "must contain only digits with an optional leading")
 		assertEqual(t, val, int64(0), "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -329,7 +341,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, "default", "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -344,7 +357,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse([]string{"--test=foo"}))
 		assertEqual(t, val, "foo", "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceFlag, "unexpected value source")
@@ -362,7 +376,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, envVal, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceEnv, "unexpected value source")
@@ -377,7 +392,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, uint(42), "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -392,7 +408,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse([]string{"--test=42"}))
 		assertEqual(t, val, uint(42), "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceFlag, "unexpected value source")
@@ -407,7 +424,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.ContinueOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertErrorContains(t, set.Parse([]string{"--test=foo"}), "must contain only digits")
 		assertEqual(t, val, uint(0), "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -422,7 +440,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, uint64(42), "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -437,7 +456,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse([]string{"--test=42"}))
 		assertEqual(t, val, uint64(42), "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceFlag, "unexpected value source")
@@ -452,7 +472,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.ContinueOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertErrorContains(t, set.Parse([]string{"--test=foo"}), "must contain only digits")
 		assertEqual(t, val, uint64(0), "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -467,7 +488,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, 42.42, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -482,7 +504,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse([]string{"--test=42.42"}))
 		assertEqual(t, val, 42.42, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceFlag, "unexpected value source")
@@ -497,7 +520,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.ContinueOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertErrorContains(t, set.Parse([]string{"--test=foo"}), "must contain only digits with an optional decimal")
 		assertEqual(t, val, 0.0, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -512,7 +536,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, time.Second, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -527,7 +552,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse([]string{"--test=42s"}))
 		assertEqual(t, val, 42*time.Second, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceFlag, "unexpected value source")
@@ -542,7 +568,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.ContinueOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertErrorContains(t, set.Parse([]string{"--test=foo"}), "must be a valid Go duration string")
 		assertEqual(t, val, 0*time.Second, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
@@ -560,7 +587,8 @@ func TestFlag_Apply(t *testing.T) {
 			set = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, 42*time.Second, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceEnv, "unexpected value source")
@@ -576,7 +604,8 @@ func TestFlag_Apply(t *testing.T) {
 			set     = newFlagSet(flag.PanicOnError)
 		)
 
-		assertNoError(t, f.Apply(set))
+		f.Apply(set)
+
 		assertNoError(t, set.Parse(nil))
 		assertEqual(t, val, 0*time.Second, "unexpected value")
 		assertEqual(t, f.ValueSetFrom, cmd.FlagValueSourceDefault, "unexpected value source")
