@@ -331,7 +331,7 @@ func yaml_parser_fetch_next_token(parser *yaml_parser_t) (ok bool) {
 	// The last rule is more restrictive than the specification requires.
 	// [Go] TODO Make this logic more reasonable.
 	// switch parser.buffer[parser.buffer_pos] {
-	//case '-', '?', ':', ',', '?', '-', ',', ':', ']', '[', '}', '{', '&', '#', '!', '*', '>', '|', '"', '\'', '@', '%', '-', '`':
+	// case '-', '?', ':', ',', '?', '-', ',', ':', ']', '[', '}', '{', '&', '#', '!', '*', '>', '|', '"', '\'', '@', '%', '-', '`':
 	//}
 	if !(is_blankz(parser.buffer, parser.buffer_pos) || parser.buffer[parser.buffer_pos] == '-' ||
 		parser.buffer[parser.buffer_pos] == '?' || parser.buffer[parser.buffer_pos] == ':' ||
@@ -2537,6 +2537,7 @@ func yaml_parser_scan_comments(parser *yaml_parser_t, scan_mark yaml_mark_t) boo
 		c := parser.buffer[parser.buffer_pos+peek]
 
 		var close_flow = parser.flow_level > 0 && (c == ']' || c == '}')
+
 		if close_flow || is_breakz(parser.buffer, parser.buffer_pos+peek) {
 			// Got line break or terminator.
 			if close_flow || !recent_empty {

@@ -47,14 +47,13 @@ type yaml_error_type_t int
 const (
 	// No error is produced.
 	yaml_NO_ERROR yaml_error_type_t = iota
-
-	yaml_MEMORY_ERROR   // Cannot allocate or reallocate a block of memory.
-	yaml_READER_ERROR   // Cannot read or decode the input stream.
-	yaml_SCANNER_ERROR  // Cannot scan the input stream.
-	yaml_PARSER_ERROR   // Cannot parse the input stream.
-	yaml_COMPOSER_ERROR // Cannot compose a YAML document.
-	yaml_WRITER_ERROR   // Cannot write to the output stream.
-	yaml_EMITTER_ERROR  // Cannot emit a YAML stream.
+	_
+	yaml_READER_ERROR  // Cannot read or decode the input stream.
+	yaml_SCANNER_ERROR // Cannot scan the input stream.
+	yaml_PARSER_ERROR  // Cannot parse the input stream.
+	_
+	yaml_WRITER_ERROR  // Cannot write to the output stream.
+	yaml_EMITTER_ERROR // Cannot emit a YAML stream.
 )
 
 // The pointer position.
@@ -87,10 +86,9 @@ type yaml_sequence_style_t yaml_style_t
 // Sequence styles.
 const (
 	// Let the emitter choose the style.
-	yaml_ANY_SEQUENCE_STYLE yaml_sequence_style_t = iota
-
-	yaml_BLOCK_SEQUENCE_STYLE // The block sequence style.
-	yaml_FLOW_SEQUENCE_STYLE  // The flow sequence style.
+	_                         yaml_sequence_style_t = iota
+	yaml_BLOCK_SEQUENCE_STYLE                       // The block sequence style.
+	yaml_FLOW_SEQUENCE_STYLE                        // The flow sequence style.
 )
 
 type yaml_mapping_style_t yaml_style_t
@@ -98,10 +96,9 @@ type yaml_mapping_style_t yaml_style_t
 // Mapping styles.
 const (
 	// Let the emitter choose the style.
-	yaml_ANY_MAPPING_STYLE yaml_mapping_style_t = iota
-
-	yaml_BLOCK_MAPPING_STYLE // The block mapping style.
-	yaml_FLOW_MAPPING_STYLE  // The flow mapping style.
+	_                        yaml_mapping_style_t = iota
+	yaml_BLOCK_MAPPING_STYLE                      // The block mapping style.
+	yaml_FLOW_MAPPING_STYLE                       // The flow mapping style.
 )
 
 // Tokens
@@ -111,7 +108,7 @@ type yaml_token_type_t int
 // Token types.
 const (
 	// An empty token.
-	yaml_NO_TOKEN yaml_token_type_t = iota
+	_ yaml_token_type_t = iota
 
 	yaml_STREAM_START_TOKEN // A STREAM-START token.
 	yaml_STREAM_END_TOKEN   // A STREAM-END token.
@@ -248,7 +245,8 @@ type yaml_event_t struct {
 	value []byte
 
 	// Is the document start/end indicator implicit, or the tag optional?
-	// (for yaml_DOCUMENT_START_EVENT, yaml_DOCUMENT_END_EVENT, yaml_SEQUENCE_START_EVENT, yaml_MAPPING_START_EVENT, yaml_SCALAR_EVENT).
+	// (for yaml_DOCUMENT_START_EVENT, yaml_DOCUMENT_END_EVENT, yaml_SEQUENCE_START_EVENT,
+	// yaml_MAPPING_START_EVENT, yaml_SCALAR_EVENT).
 	implicit bool
 
 	// Is the tag optional for any non-plain style? (for yaml_SCALAR_EVENT).
@@ -265,36 +263,26 @@ func (e *yaml_event_t) mapping_style() yaml_mapping_style_t   { return yaml_mapp
 // Nodes
 
 const (
-	yaml_NULL_TAG      = "tag:yaml.org,2002:null"      // The tag !!null with the only possible value: null.
-	yaml_BOOL_TAG      = "tag:yaml.org,2002:bool"      // The tag !!bool with the values: true and false.
-	yaml_STR_TAG       = "tag:yaml.org,2002:str"       // The tag !!str for string values.
-	yaml_INT_TAG       = "tag:yaml.org,2002:int"       // The tag !!int for integer values.
-	yaml_FLOAT_TAG     = "tag:yaml.org,2002:float"     // The tag !!float for float values.
-	yaml_TIMESTAMP_TAG = "tag:yaml.org,2002:timestamp" // The tag !!timestamp for date and time values.
+	_            = "tag:yaml.org,2002:null"      // The tag !!null with the only possible value: null.
+	_            = "tag:yaml.org,2002:bool"      // The tag !!bool with the values: true and false.
+	yaml_STR_TAG = "tag:yaml.org,2002:str"       // The tag !!str for string values.
+	_            = "tag:yaml.org,2002:int"       // The tag !!int for integer values.
+	_            = "tag:yaml.org,2002:float"     // The tag !!float for float values.
+	_            = "tag:yaml.org,2002:timestamp" // The tag !!timestamp for date and time values.
 
 	yaml_SEQ_TAG = "tag:yaml.org,2002:seq" // The tag !!seq is used to denote sequences.
 	yaml_MAP_TAG = "tag:yaml.org,2002:map" // The tag !!map is used to denote mapping.
 
 	// Not in original libyaml.
-	yaml_BINARY_TAG = "tag:yaml.org,2002:binary"
-	yaml_MERGE_TAG  = "tag:yaml.org,2002:merge"
+	_ = "tag:yaml.org,2002:binary"
+	_ = "tag:yaml.org,2002:merge"
 
-	yaml_DEFAULT_SCALAR_TAG   = yaml_STR_TAG // The default scalar tag is !!str.
-	yaml_DEFAULT_SEQUENCE_TAG = yaml_SEQ_TAG // The default sequence tag is !!seq.
-	yaml_DEFAULT_MAPPING_TAG  = yaml_MAP_TAG // The default mapping tag is !!map.
+	_ = yaml_STR_TAG // The default scalar tag is !!str.
+	_ = yaml_SEQ_TAG // The default sequence tag is !!seq.
+	_ = yaml_MAP_TAG // The default mapping tag is !!map.
 )
 
 type yaml_node_type_t int
-
-// Node types.
-const (
-	// An empty node.
-	yaml_NO_NODE yaml_node_type_t = iota
-
-	yaml_SCALAR_NODE   // A scalar node.
-	yaml_SEQUENCE_NODE // A sequence node.
-	yaml_MAPPING_NODE  // A mapping node.
-)
 
 // An element of a sequence node.
 type yaml_node_item_t int
@@ -557,10 +545,10 @@ const (
 	yaml_EMIT_DOCUMENT_CONTENT_STATE           // Expect the content of a document.
 	yaml_EMIT_DOCUMENT_END_STATE               // Expect DOCUMENT-END.
 	yaml_EMIT_FLOW_SEQUENCE_FIRST_ITEM_STATE   // Expect the first item of a flow sequence.
-	yaml_EMIT_FLOW_SEQUENCE_TRAIL_ITEM_STATE   // Expect the next item of a flow sequence, with the comma already written out
+	yaml_EMIT_FLOW_SEQUENCE_TRAIL_ITEM_STATE   // Expect the next item of a flow sequence, with the comma written out
 	yaml_EMIT_FLOW_SEQUENCE_ITEM_STATE         // Expect an item of a flow sequence.
 	yaml_EMIT_FLOW_MAPPING_FIRST_KEY_STATE     // Expect the first key of a flow mapping.
-	yaml_EMIT_FLOW_MAPPING_TRAIL_KEY_STATE     // Expect the next key of a flow mapping, with the comma already written out
+	yaml_EMIT_FLOW_MAPPING_TRAIL_KEY_STATE     // Expect the next key of a flow mapping, with the comma written out
 	yaml_EMIT_FLOW_MAPPING_KEY_STATE           // Expect a key of a flow mapping.
 	yaml_EMIT_FLOW_MAPPING_SIMPLE_VALUE_STATE  // Expect a value for a simple key of a flow mapping.
 	yaml_EMIT_FLOW_MAPPING_VALUE_STATE         // Expect a value of a flow mapping.

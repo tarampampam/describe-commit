@@ -3,6 +3,7 @@ package yaml
 import (
 	"encoding"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -171,12 +172,13 @@ func (p *parser) parse() *Node {
 func (p *parser) node(kind Kind, defaultTag, tag, value string) *Node {
 	var style Style
 
-	if tag != "" && tag != "!" {
+	switch {
+	case tag != "" && tag != "!":
 		tag = shortTag(tag)
 		style = TaggedStyle
-	} else if defaultTag != "" {
+	case defaultTag != "":
 		tag = defaultTag
-	} else if kind == ScalarNode {
+	case kind == ScalarNode:
 		tag, _ = resolve("", value)
 	}
 
@@ -236,6 +238,7 @@ func (p *parser) scalar() *Node {
 	var parsedStyle = p.event.scalar_style()
 
 	var nodeStyle Style
+
 	switch {
 	case parsedStyle&yaml_DOUBLE_QUOTED_SCALAR_STYLE != 0:
 		nodeStyle = DoubleQuotedStyle
@@ -365,8 +368,6 @@ var (
 	stringMapType  = reflect.TypeOf(map[string]any{})
 	generalMapType = reflect.TypeOf(map[any]any{})
 	ifaceType      = generalMapType.Elem()
-	timeType       = reflect.TypeOf(time.Time{})
-	ptrTimeType    = reflect.TypeOf(&time.Time{})
 )
 
 func newDecoder() *decoder {
@@ -394,12 +395,18 @@ func (d *decoder) terror(n *Node, tag string, out reflect.Value) {
 		}
 	}
 
-	d.terrors = append(d.terrors, fmt.Sprintf("line %d: cannot unmarshal %s%s into %s", n.Line, shortTag(tag), value, out.Type()))
+	d.terrors = append(d.terrors, fmt.Sprintf(
+		"line %d: cannot unmarshal %s%s into %s",
+		n.Line, shortTag(tag), value, out.Type(),
+	))
 }
 
 func (d *decoder) callUnmarshaler(n *Node, u Unmarshaler) (good bool) {
 	err := u.UnmarshalYAML(n)
-	if e, ok := err.(*TypeError); ok {
+
+	var e *TypeError
+
+	if errors.As(err, &e) {
 		d.terrors = append(d.terrors, e.Errors...)
 
 		return false
@@ -428,7 +435,10 @@ func (d *decoder) callObsoleteUnmarshaler(n *Node, u obsoleteUnmarshaler) (good 
 
 		return nil
 	})
-	if e, ok := err.(*TypeError); ok {
+
+	var e *TypeError
+
+	if errors.As(err, &e) {
 		d.terrors = append(d.terrors, e.Errors...)
 
 		return false
@@ -544,7 +554,9 @@ func (d *decoder) unmarshal(n *Node, out reflect.Value) (good bool) {
 		d.aliasCount++
 	}
 
-	if d.aliasCount > 100 && d.decodeCount > 1000 && float64(d.aliasCount)/float64(d.decodeCount) > allowedAliasRatio(d.decodeCount) {
+	if d.aliasCount > 100 &&
+		d.decodeCount > 1000 &&
+		float64(d.aliasCount)/float64(d.decodeCount) > allowedAliasRatio(d.decodeCount) {
 		failf("document contains excessive aliasing")
 	}
 
@@ -611,8 +623,6 @@ func (d *decoder) alias(n *Node, out reflect.Value) (good bool) {
 
 	return good
 }
-
-var zeroValue reflect.Value
 
 func (d *decoder) null(out reflect.Value) bool {
 	if out.CanAddr() {
@@ -882,7 +892,10 @@ func (d *decoder) mapping(n *Node, out reflect.Value) (good bool) {
 			for j := i + 2; j < l; j += 2 {
 				nj := n.Content[j]
 				if ni.Kind == nj.Kind && ni.Value == nj.Value {
-					d.terrors = append(d.terrors, fmt.Sprintf("line %d: mapping key %#v already defined at line %d", nj.Line, nj.Value, ni.Line))
+					d.terrors = append(d.terrors, fmt.Sprintf(
+						"line %d: mapping key %#v already defined at line %d",
+						nj.Line, nj.Value, ni.Line,
+					))
 				}
 			}
 		}
@@ -969,7 +982,8 @@ func (d *decoder) mapping(n *Node, out reflect.Value) (good bool) {
 			}
 
 			e := reflect.New(et).Elem()
-			if d.unmarshal(n.Content[i+1], e) || n.Content[i+1].ShortTag() == nullTag && (mapIsNew || !out.MapIndex(k).IsValid()) {
+			if d.unmarshal(n.Content[i+1], e) ||
+				n.Content[i+1].ShortTag() == nullTag && (mapIsNew || !out.MapIndex(k).IsValid()) {
 				out.SetMapIndex(k, e)
 			}
 		}
@@ -1059,7 +1073,10 @@ func (d *decoder) mappingStruct(n *Node, out reflect.Value) (good bool) {
 		if info, ok := sinfo.FieldsMap[sname]; ok {
 			if d.uniqueKeys {
 				if doneFields[info.Id] {
-					d.terrors = append(d.terrors, fmt.Sprintf("line %d: field %s already set in type %s", ni.Line, name.String(), out.Type()))
+					d.terrors = append(d.terrors, fmt.Sprintf(
+						"line %d: field %s already set in type %s",
+						ni.Line, name.String(), out.Type(),
+					))
 
 					continue
 				}
@@ -1084,7 +1101,10 @@ func (d *decoder) mappingStruct(n *Node, out reflect.Value) (good bool) {
 			d.unmarshal(n.Content[i+1], value)
 			inlineMap.SetMapIndex(name, value)
 		} else if d.knownFields {
-			d.terrors = append(d.terrors, fmt.Sprintf("line %d: field %s not found in type %s", ni.Line, name.String(), out.Type()))
+			d.terrors = append(d.terrors, fmt.Sprintf(
+				"line %d: field %s not found in type %s",
+				ni.Line, name.String(), out.Type(),
+			))
 		}
 	}
 

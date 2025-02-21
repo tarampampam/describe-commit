@@ -165,7 +165,12 @@ func yaml_alias_event_initialize(event *yaml_event_t, anchor []byte) bool {
 }
 
 // Create SCALAR.
-func yaml_scalar_event_initialize(event *yaml_event_t, anchor, tag, value []byte, plain_implicit, quoted_implicit bool, style yaml_scalar_style_t) bool {
+func yaml_scalar_event_initialize(
+	event *yaml_event_t,
+	anchor, tag, value []byte,
+	plain_implicit, quoted_implicit bool,
+	style yaml_scalar_style_t,
+) bool {
 	*event = yaml_event_t{
 		typ:             yaml_SCALAR_EVENT,
 		anchor:          anchor,
@@ -180,7 +185,12 @@ func yaml_scalar_event_initialize(event *yaml_event_t, anchor, tag, value []byte
 }
 
 // Create SEQUENCE-START.
-func yaml_sequence_start_event_initialize(event *yaml_event_t, anchor, tag []byte, implicit bool, style yaml_sequence_style_t) bool {
+func yaml_sequence_start_event_initialize(
+	event *yaml_event_t,
+	anchor, tag []byte,
+	implicit bool,
+	style yaml_sequence_style_t,
+) bool {
 	*event = yaml_event_t{
 		typ:      yaml_SEQUENCE_START_EVENT,
 		anchor:   anchor,
@@ -202,7 +212,12 @@ func yaml_sequence_end_event_initialize(event *yaml_event_t) bool {
 }
 
 // Create MAPPING-START.
-func yaml_mapping_start_event_initialize(event *yaml_event_t, anchor, tag []byte, implicit bool, style yaml_mapping_style_t) {
+func yaml_mapping_start_event_initialize(
+	event *yaml_event_t,
+	anchor, tag []byte,
+	implicit bool,
+	style yaml_mapping_style_t,
+) {
 	*event = yaml_event_t{
 		typ:      yaml_MAPPING_START_EVENT,
 		anchor:   anchor,

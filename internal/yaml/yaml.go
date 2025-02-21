@@ -440,7 +440,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 					return nil, errors.New("option ,inline may only be used on a struct or map field")
 				}
 
-				if reflect.PtrTo(ftype).Implements(unmarshalerType) {
+				if reflect.PointerTo(ftype).Implements(unmarshalerType) {
 					inlineUnmarshalers = append(inlineUnmarshalers, []int{i})
 				} else {
 					sinfo, err := getStructInfo(ftype)

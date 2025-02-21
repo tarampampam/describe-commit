@@ -1246,7 +1246,7 @@ func yaml_parser_parse_flow_mapping_value(parser *yaml_parser_t, event *yaml_eve
 }
 
 // Generate an empty scalar event.
-func yaml_parser_process_empty_scalar(parser *yaml_parser_t, event *yaml_event_t, mark yaml_mark_t) bool {
+func yaml_parser_process_empty_scalar(_ *yaml_parser_t, event *yaml_event_t, mark yaml_mark_t) bool {
 	*event = yaml_event_t{
 		typ:        yaml_SCALAR_EVENT,
 		start_mark: mark,
