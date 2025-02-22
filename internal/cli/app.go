@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gh.tarampamp.am/describe-commit/internal/ai"
@@ -39,7 +40,7 @@ func NewApp(name string) *App { //nolint:funlen
 			Names:   []string{"config-file", "c"},
 			Usage:   "Path to the configuration file",
 			EnvVars: []string{"CONFIG_FILE"},
-			Default: app.opt.ConfigFilePath,
+			Default: DefaultConfigFilePath,
 		}
 		shortMessageOnly = cmd.Flag[bool]{
 			Names:   []string{"short-message-only", "s"},
@@ -125,13 +126,24 @@ func NewApp(name string) *App { //nolint:funlen
 	}
 
 	app.cmd.Action = func(ctx context.Context, c *cmd.Command, args []string) error {
-		var cfg config.Config
+		var wd, wdErr = app.getWorkingDir(args)
+		if wdErr != nil {
+			return fmt.Errorf("wrong working directory: %w", wdErr)
+		}
 
-		setIfSourceNotNil(&app.opt.ConfigFilePath, configFile.Value)
+		var cfgFilePath string
 
-		// override the default options with the configuration file values, if they are set
-		if configFile.Value != nil && *configFile.Value != "" { //nolint:nestif
-			if err := cfg.FromFile(*configFile.Value); err == nil {
+		if configFile.Value != nil {
+			cfgFilePath = *configFile.Value
+		} else if path, found := app.getConfigFilePath(wd); found {
+			cfgFilePath = path
+		}
+
+		if cfgFilePath != "" {
+			var cfg config.Config
+
+			// override the default options with the configuration file values, if they are set
+			if err := cfg.FromFile(cfgFilePath); err == nil {
 				setIfSourceNotNil(&app.opt.ShortMessageOnly, cfg.ShortMessageOnly)
 				setIfSourceNotNil(&app.opt.CommitHistoryLength, cfg.CommitHistoryLength)
 				setIfSourceNotNil(&app.opt.EnableEmoji, cfg.EnableEmoji)
@@ -150,10 +162,11 @@ func NewApp(name string) *App { //nolint:funlen
 			} else {
 				debug.Printf("failed to load the configuration file: %s", err)
 			}
+		} else {
+			debug.Printf("configuration file not found")
 		}
 
 		{ // override the options with the command-line flags
-			setIfFlagIsSet(&app.opt.ConfigFilePath, configFile)
 			setIfFlagIsSet(&app.opt.ShortMessageOnly, shortMessageOnly)
 			setIfFlagIsSet(&app.opt.CommitHistoryLength, commitHistoryLength)
 			setIfFlagIsSet(&app.opt.EnableEmoji, enableEmoji)
@@ -169,31 +182,10 @@ func NewApp(name string) *App { //nolint:funlen
 			return fmt.Errorf("invalid options: %w", err)
 		}
 
-		var wd, wdErr = app.getWorkingDir(args)
-		if wdErr != nil {
-			return fmt.Errorf("wrong working directory: %w", wdErr)
-		}
-
 		return app.run(ctx, wd)
 	}
 
 	return &app
-}
-
-func setIfSourceNotNil[T any](target, source *T) {
-	if target == nil || source == nil {
-		return
-	}
-
-	*target = *source
-}
-
-func setIfFlagIsSet[T cmd.FlagType](target *T, source cmd.Flag[T]) {
-	if target == nil || source.Value == nil || !source.IsSet() {
-		return
-	}
-
-	*target = *source.Value
 }
 
 // getWorkingDir returns the working directory to use for the application.
@@ -224,7 +216,7 @@ func (*App) getWorkingDir(args []string) (string, error) {
 		return "", fmt.Errorf("not a directory: %s", dir)
 	}
 
-	return dir, nil
+	return filepath.Clean(dir), nil
 }
 
 // Run runs the application.
@@ -308,4 +300,20 @@ func (a *App) run(ctx context.Context, workingDir string) error { //nolint:funle
 	}
 
 	return nil
+}
+
+func setIfSourceNotNil[T any](target, source *T) {
+	if target == nil || source == nil {
+		return
+	}
+
+	*target = *source
+}
+
+func setIfFlagIsSet[T cmd.FlagType](target *T, source cmd.Flag[T]) {
+	if target == nil || source.Value == nil || !source.IsSet() {
+		return
+	}
+
+	*target = *source.Value
 }

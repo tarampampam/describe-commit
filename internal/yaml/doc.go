@@ -2,14 +2,33 @@
 //
 // It contains the source code for the `github.com/go-yaml/yaml` package.
 //
-// This is a copy of the original package (v3.0.1) with some code (Marshalling/Encoding)
-// removed (reported by the `deadcode` tool https://go.dev/blog/deadcode and
-// golangci-lint 'unused' linter).
+// This is a copy of the original package (v3.0.1) with some code
+// (Marshaling/Encoding) removed (reported by the `deadcode` tool
+// https://go.dev/blog/deadcode and golangci-lint 'unused' linter).
 //
-// It has been placed here to eliminate the need to download the package from remote galaxies.
+// Before:
+//
+//	Language                     files          blank        comment           code
+//	-------------------------------------------------------------------------------
+//	Go                              19           1345           2775          12769
+//	Markdown                         1             39              0            111
+//	YAML                             1              4              0             57
+//	-------------------------------------------------------------------------------
+//	SUM:                            21           1388           2775          12937
+//
+// After (approximate):
+//
+//	Language                     files          blank        comment           code
+//	-------------------------------------------------------------------------------
+//	Go                              11           1309           1019           4838
+//	-------------------------------------------------------------------------------
+//	SUM:                            11           1309           1019           4838
+//
+// It has been placed here to eliminate the need to download the package from
+// remote galaxies.
 // Updating this package is not necessary, as it is highly stable and mature.
 //
-// -------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------
 //
 // Copyright (c) 2011-2019 Canonical Ltd
 // Copyright (c) 2006-2010 Kirill Simonov

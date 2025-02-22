@@ -3,14 +3,11 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"gh.tarampamp.am/describe-commit/internal/ai"
 )
 
 type options struct {
-	ConfigFilePath      string
 	ShortMessageOnly    bool
 	CommitHistoryLength int64
 	EnableEmoji         bool
@@ -25,24 +22,6 @@ type options struct {
 
 func newOptionsWithDefaults() options {
 	var opt = options{
-		ConfigFilePath: func() string { // default file path depends on the user's OS
-			const fileName = "describe-commit.yml"
-
-			// used to override the default config file path in readme generation
-			if v, ok := os.LookupEnv("DEFAULT_CONFIG_FILE_DIR"); ok {
-				return filepath.Join(v, fileName)
-			}
-
-			if dir, err := os.UserConfigDir(); err == nil {
-				return filepath.Join(dir, fileName)
-			}
-
-			if cwd, err := os.Getwd(); err == nil {
-				return filepath.Join(cwd, fileName)
-			}
-
-			return filepath.Join(".", fileName)
-		}(),
 		CommitHistoryLength: 20,                //nolint:mnd
 		MaxOutputTokens:     500,               //nolint:mnd
 		AIProviderName:      ai.ProviderGemini, // due to its free

@@ -17,9 +17,7 @@ func main() {
 		readmePath            = "../../README.md"
 	)
 
-	os.Setenv(defaultConfDirEnvName, filepath.Join("depends", "on", "your-os"))
-
-	defer func() { os.Unsetenv(defaultConfDirEnvName) }()
+	cli.DefaultConfigFilePath = filepath.Join("depends", "on", "your-os", cli.ConfigFileName)
 
 	if stat, statErr := os.Stat(readmePath); statErr == nil && stat.Mode().IsRegular() {
 		var help = cli.NewApp("describe-commit").Help()
