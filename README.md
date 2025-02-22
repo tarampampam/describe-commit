@@ -150,7 +150,7 @@ describe-commit -s -e
 
 ## ⚙ Configuration
 
-You can configure `describe-commit` using a YAML file. Use [describe-commit.yml](describe-commit.yml) as a reference
+You can configure `describe-commit` using a YAML file. Use [describe-commit.yml](describe-commit.example.yml) as a reference
 for the available options.
 
 The configuration file's location can be specified using the `--config-file` option. However, by default, the file

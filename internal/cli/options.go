@@ -3,10 +3,14 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"gh.tarampamp.am/describe-commit/internal/ai"
+	"gh.tarampamp.am/describe-commit/internal/config"
 )
 
+// options represents the command-line options. this struct should be used ONLY in this package (do not try to pass
+// it somewhere else).
 type options struct {
 	ShortMessageOnly    bool
 	CommitHistoryLength int64
@@ -31,6 +35,59 @@ func newOptionsWithDefaults() options {
 	opt.Providers.OpenAI.ModelName = "gpt-4o-mini"
 
 	return opt
+}
+
+// UpdateFromConfigFile loads the configuration from the file(s) and applies it to the options.
+// The values loaded from the earlier files will be overridden by those from the later files, with the last
+// file taking the highest priority.
+// Missing files and directories are ignored.
+func (o *options) UpdateFromConfigFile(filePath []string) error {
+	if len(filePath) == 0 {
+		return nil
+	}
+
+	var cfg config.Config
+
+	for _, path := range filePath {
+		if path == "" {
+			continue // skip empty paths
+		}
+
+		if stat, err := os.Stat(path); err != nil || stat.IsDir() {
+			continue // skip missing files and directories
+		}
+
+		if err := cfg.FromFile(path); err != nil {
+			return fmt.Errorf("failed to load the configuration file: %w", err)
+		}
+	}
+
+	setIfSourceNotNil(&o.ShortMessageOnly, cfg.ShortMessageOnly)
+	setIfSourceNotNil(&o.CommitHistoryLength, cfg.CommitHistoryLength)
+	setIfSourceNotNil(&o.EnableEmoji, cfg.EnableEmoji)
+	setIfSourceNotNil(&o.MaxOutputTokens, cfg.MaxOutputTokens)
+	setIfSourceNotNil(&o.AIProviderName, cfg.AIProviderName)
+
+	if sub := cfg.Gemini; sub != nil {
+		setIfSourceNotNil(&o.Providers.Gemini.ApiKey, sub.ApiKey)
+		setIfSourceNotNil(&o.Providers.Gemini.ModelName, sub.ModelName)
+	}
+
+	if sub := cfg.OpenAI; sub != nil {
+		setIfSourceNotNil(&o.Providers.OpenAI.ApiKey, sub.ApiKey)
+		setIfSourceNotNil(&o.Providers.OpenAI.ModelName, sub.ModelName)
+	}
+
+	return nil
+}
+
+// setIfSourceNotNil sets the target value to the source value if both are not nil.
+func setIfSourceNotNil[T any](target, source *T) {
+	if target == nil || source == nil {
+		return
+	}
+
+	*target = *source
 }
 
 func (o *options) Validate() error {

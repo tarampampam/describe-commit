@@ -40,7 +40,7 @@ func NewApp(name string) *App { //nolint:funlen
 			Names:   []string{"config-file", "c"},
 			Usage:   "Path to the configuration file",
 			EnvVars: []string{"CONFIG_FILE"},
-			Default: DefaultConfigFilePath,
+			Default: filepath.Join(config.DefaultDirPath(), config.FileName),
 		}
 		shortMessageOnly = cmd.Flag[bool]{
 			Names:   []string{"short-message-only", "s"},
@@ -126,44 +126,15 @@ func NewApp(name string) *App { //nolint:funlen
 	}
 
 	app.cmd.Action = func(ctx context.Context, c *cmd.Command, args []string) error {
+		// determine the working directory
 		var wd, wdErr = app.getWorkingDir(args)
 		if wdErr != nil {
 			return fmt.Errorf("wrong working directory: %w", wdErr)
 		}
 
-		var cfgFilePath string
-
-		if configFile.Value != nil {
-			cfgFilePath = *configFile.Value
-		} else if path, found := app.getConfigFilePath(wd); found {
-			cfgFilePath = path
-		}
-
-		if cfgFilePath != "" {
-			var cfg config.Config
-
-			// override the default options with the configuration file values, if they are set
-			if err := cfg.FromFile(cfgFilePath); err == nil {
-				setIfSourceNotNil(&app.opt.ShortMessageOnly, cfg.ShortMessageOnly)
-				setIfSourceNotNil(&app.opt.CommitHistoryLength, cfg.CommitHistoryLength)
-				setIfSourceNotNil(&app.opt.EnableEmoji, cfg.EnableEmoji)
-				setIfSourceNotNil(&app.opt.MaxOutputTokens, cfg.MaxOutputTokens)
-				setIfSourceNotNil(&app.opt.AIProviderName, cfg.AIProviderName)
-
-				if sub := cfg.Gemini; sub != nil {
-					setIfSourceNotNil(&app.opt.Providers.Gemini.ApiKey, sub.ApiKey)
-					setIfSourceNotNil(&app.opt.Providers.Gemini.ModelName, sub.ModelName)
-				}
-
-				if sub := cfg.OpenAI; sub != nil {
-					setIfSourceNotNil(&app.opt.Providers.OpenAI.ApiKey, sub.ApiKey)
-					setIfSourceNotNil(&app.opt.Providers.OpenAI.ModelName, sub.ModelName)
-				}
-			} else {
-				debug.Printf("failed to load the configuration file: %s", err)
-			}
-		} else {
-			debug.Printf("configuration file not found")
+		// update the options from the configuration file(s)
+		if err := app.opt.UpdateFromConfigFile(append([]string{*configFile.Value}, config.FindIn(wd)...)); err != nil {
+			return err
 		}
 
 		{ // override the options with the command-line flags
@@ -188,12 +159,21 @@ func NewApp(name string) *App { //nolint:funlen
 	return &app
 }
 
+// setIfFlagIsSet sets the value from the flag to the option if the flag is set and the value is not nil.
+func setIfFlagIsSet[T cmd.FlagType](target *T, source cmd.Flag[T]) {
+	if target == nil || source.Value == nil || !source.IsSet() {
+		return
+	}
+
+	*target = *source.Value
+}
+
 // getWorkingDir returns the working directory to use for the application.
 func (*App) getWorkingDir(args []string) (string, error) {
 	var dir string
 
 	if len(args) > 0 {
-		dir = strings.TrimSpace(args[0])
+		dir = filepath.Clean(strings.TrimSpace(args[0]))
 	}
 
 	// if the argument was not set, use the `os.Getwd`
@@ -202,6 +182,15 @@ func (*App) getWorkingDir(args []string) (string, error) {
 			return "", err
 		} else {
 			dir = d
+		}
+	}
+
+	// convert the relative path to the absolute one
+	if !filepath.IsAbs(dir) {
+		if abs, absErr := filepath.Abs(dir); absErr != nil {
+			return "", absErr
+		} else {
+			dir = abs
 		}
 	}
 
@@ -216,7 +205,7 @@ func (*App) getWorkingDir(args []string) (string, error) {
 		return "", fmt.Errorf("not a directory: %s", dir)
 	}
 
-	return filepath.Clean(dir), nil
+	return dir, nil
 }
 
 // Run runs the application.
@@ -300,20 +289,4 @@ func (a *App) run(ctx context.Context, workingDir string) error { //nolint:funle
 	}
 
 	return nil
-}
-
-func setIfSourceNotNil[T any](target, source *T) {
-	if target == nil || source == nil {
-		return
-	}
-
-	*target = *source
-}
-
-func setIfFlagIsSet[T cmd.FlagType](target *T, source cmd.Flag[T]) {
-	if target == nil || source.Value == nil || !source.IsSet() {
-		return
-	}
-
-	*target = *source.Value
 }

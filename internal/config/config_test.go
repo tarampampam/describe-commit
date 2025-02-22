@@ -109,148 +109,61 @@ gemini:
 			}
 		})
 	}
-}
 
-func TestConfig_Merge(t *testing.T) {
-	t.Parallel()
+	t.Run("merge", func(t *testing.T) {
+		var (
+			tmpDir  = t.TempDir()
+			config1 = filepath.Join(tmpDir, "config1.yml")
+			config2 = filepath.Join(tmpDir, "config2.yml")
+		)
 
-	for name, tc := range map[string]struct {
-		giveConfig    config.Config
-		giveMergeWith config.Config
-		wantConfig    config.Config
-	}{
-		"empty with empty": {
-			giveConfig:    config.Config{},
-			giveMergeWith: config.Config{},
-			wantConfig:    config.Config{},
-		},
-		"full with full": {
-			giveConfig: func() (c config.Config) {
-				c.ShortMessageOnly = toPtr(true)
-				c.CommitHistoryLength = toPtr[int64](1)
-				c.EnableEmoji = toPtr(true)
-				c.MaxOutputTokens = toPtr[int64](1)
-				c.AIProviderName = toPtr("foobar1")
-				c.Gemini = &config.Gemini{
-					ApiKey:    toPtr("GeminiApiKey1"),
-					ModelName: toPtr("GeminiModelName1"),
-				}
-				c.OpenAI = &config.OpenAI{
-					ApiKey:    toPtr("OpenAIApiKey1"),
-					ModelName: toPtr("OpenAIModelName1"),
-				}
-
-				return
-			}(),
-			giveMergeWith: func() (c config.Config) {
-				c.ShortMessageOnly = toPtr(false)
-				c.CommitHistoryLength = toPtr[int64](2)
-				c.EnableEmoji = toPtr(false)
-				c.MaxOutputTokens = toPtr[int64](2)
-				c.AIProviderName = toPtr("foobar2")
-				c.Gemini = &config.Gemini{
-					ApiKey:    toPtr("GeminiApiKey2"),
-					ModelName: toPtr("GeminiModelName2"),
-				}
-				c.OpenAI = &config.OpenAI{
-					ApiKey:    toPtr("OpenAIApiKey2"),
-					ModelName: toPtr("OpenAIModelName2"),
-				}
-
-				return
-			}(),
-			wantConfig: func() (c config.Config) {
-				c.ShortMessageOnly = toPtr(false)
-				c.CommitHistoryLength = toPtr[int64](2)
-				c.EnableEmoji = toPtr(false)
-				c.MaxOutputTokens = toPtr[int64](2)
-				c.AIProviderName = toPtr("foobar2")
-				c.Gemini = &config.Gemini{
-					ApiKey:    toPtr("GeminiApiKey2"),
-					ModelName: toPtr("GeminiModelName2"),
-				}
-				c.OpenAI = &config.OpenAI{
-					ApiKey:    toPtr("OpenAIApiKey2"),
-					ModelName: toPtr("OpenAIModelName2"),
-				}
-
-				return
-			}(),
-		},
-		"empty with full": {
-			giveConfig: config.Config{},
-			giveMergeWith: func() (c config.Config) {
-				c.ShortMessageOnly = toPtr(false)
-				c.CommitHistoryLength = toPtr[int64](2)
-				c.EnableEmoji = toPtr(false)
-				c.MaxOutputTokens = toPtr[int64](2)
-				c.AIProviderName = toPtr("foobar2")
-				c.Gemini = &config.Gemini{
-					ApiKey:    toPtr("GeminiApiKey2"),
-					ModelName: toPtr("GeminiModelName2"),
-				}
-				c.OpenAI = &config.OpenAI{
-					ApiKey:    toPtr("OpenAIApiKey2"),
-					ModelName: toPtr("OpenAIModelName2"),
-				}
-
-				return
-			}(),
-			wantConfig: func() (c config.Config) {
-				c.ShortMessageOnly = toPtr(false)
-				c.CommitHistoryLength = toPtr[int64](2)
-				c.EnableEmoji = toPtr(false)
-				c.MaxOutputTokens = toPtr[int64](2)
-				c.AIProviderName = toPtr("foobar2")
-				c.Gemini = &config.Gemini{
-					ApiKey:    toPtr("GeminiApiKey2"),
-					ModelName: toPtr("GeminiModelName2"),
-				}
-				c.OpenAI = &config.OpenAI{
-					ApiKey:    toPtr("OpenAIApiKey2"),
-					ModelName: toPtr("OpenAIModelName2"),
-				}
-
-				return
-			}(),
-		},
-		"partial with partial": {
-			giveConfig: func() (c config.Config) {
-				c.ShortMessageOnly = toPtr(true)
-				c.Gemini = &config.Gemini{
-					ApiKey: toPtr("GeminiApiKey1"),
-				}
-
-				return
-			}(),
-			giveMergeWith: func() (c config.Config) {
-				c.ShortMessageOnly = toPtr(false)
-				c.Gemini = &config.Gemini{
-					ApiKey: toPtr("GeminiApiKey2"),
-				}
-
-				return
-			}(),
-			wantConfig: func() (c config.Config) {
-				c.ShortMessageOnly = toPtr(false)
-				c.Gemini = &config.Gemini{
-					ApiKey: toPtr("GeminiApiKey2"),
-				}
-
-				return
-			}(),
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
-			tc.giveConfig.Merge(&tc.giveMergeWith)
-
-			if !reflect.DeepEqual(tc.giveConfig, tc.wantConfig) {
-				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.wantConfig, tc.giveConfig)
+		// create config files
+		for _, err := range []error{
+			os.WriteFile(config1, []byte(`
+shortMessageOnly: true
+gemini:
+  apiKey: gemini-api-key-1
+`), 0o600),
+			os.WriteFile(config2, []byte(`
+shortMessageOnly: false
+gemini:
+  apiKey: gemini-api-key-2
+openai:
+  apiKey: openai-api-key
+  modelName: openai-model-name
+`), 0o600),
+		} {
+			if err != nil {
+				t.Fatalf("failed to create a config file: %v", err)
 			}
-		})
-	}
+		}
+
+		var cfg config.Config
+
+		// read the first file
+		if err := cfg.FromFile(config1); err != nil {
+			t.Fatalf("failed to read the first config file: %v", err)
+		}
+
+		// read the second file
+		if err := cfg.FromFile(config2); err != nil {
+			t.Fatalf("failed to read the second config file: %v", err)
+		}
+
+		// assert the structure
+		if !reflect.DeepEqual(cfg, config.Config{
+			ShortMessageOnly: toPtr(false),
+			Gemini: &config.Gemini{
+				ApiKey: toPtr("gemini-api-key-2"),
+			},
+			OpenAI: &config.OpenAI{
+				ApiKey:    toPtr("openai-api-key"),
+				ModelName: toPtr("openai-model-name"),
+			},
+		}) {
+			t.Fatalf("unexpected config: %+v", cfg)
+		}
+	})
 }
 
 func toPtr[T any](v T) *T { return &v }

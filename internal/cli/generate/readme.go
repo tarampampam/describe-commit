@@ -4,20 +4,20 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"gh.tarampamp.am/describe-commit/internal/cli"
+	"gh.tarampamp.am/describe-commit/internal/config"
 )
 
 func main() {
-	const (
-		defaultConfDirEnvName = "DEFAULT_CONFIG_FILE_DIR"
-		readmePath            = "../../README.md"
-	)
+	const readmePath = "../../README.md"
 
-	cli.DefaultConfigFilePath = filepath.Join("depends", "on", "your-os", cli.ConfigFileName)
+	_ = os.Setenv(config.DefaultDirPathEnvName, filepath.Join("depends", "on", "your-os"))
+	defer func() { _ = os.Unsetenv(config.DefaultDirPathEnvName) }()
 
 	if stat, statErr := os.Stat(readmePath); statErr == nil && stat.Mode().IsRegular() {
 		var help = cli.NewApp("describe-commit").Help()
@@ -25,10 +25,10 @@ func main() {
 		if err := replaceWith(readmePath, help); err != nil {
 			panic(err)
 		} else {
-			println("✔ cli docs updated successfully")
+			fmt.Println("✔ cli docs updated successfully")
 		}
 	} else if statErr != nil {
-		println("⚠ readme file not found, cli docs not updated:", statErr.Error())
+		fmt.Println("⚠ readme file not found, cli docs not updated:", statErr.Error())
 	}
 }
 

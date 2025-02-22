@@ -8,9 +8,16 @@ import (
 // FileName holds the name of the configuration file.
 const FileName = "describe-commit.yml"
 
+// DefaultDirPathEnvName used to override the default directory path (useful for docs generation purposes).
+const DefaultDirPathEnvName = "DEFAULT_CONFIG_FILE_DIR"
+
 // DefaultDirPath returns the default directory path where the configuration file is looked for by default.
 // Only in case of exception, this function returns an empty string.
 func DefaultDirPath() string {
+	if v, ok := os.LookupEnv(DefaultDirPathEnvName); ok {
+		return v
+	}
+
 	if v := osSpecificConfigDirPath(); v != "" {
 		return v
 	}
@@ -35,13 +42,15 @@ func DefaultDirPath() string {
 //	│   │   │   └── describe-commit.yml
 //	│   │   └── dir4
 //	│   │       └── describe-commit.yml
-//	│   └── .describe-commit.yml
+//	│   ├── .describe-commit.yml
+//	│   └── describe-commit.yml
 //	└── describe-commit.yml
 //
 // When this function is called with the path of `/dir1/dir2/dir3`, it will return the following slice:
 //
 //	[
 //		"/dir1/dir2/dir3/describe-commit.yml",
+//		"/dir1/describe-commit.yml", // non-hidden file has priority
 //		"/dir1/.describe-commit.yml",
 //		"/describe-commit.yml",
 //	]

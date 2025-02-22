@@ -18,7 +18,7 @@ RUN set -x \
       -ldflags "-s -w -X gh.tarampamp.am/describe-commit/internal/version.version=${APP_VERSION}" \
       -o ./describe-commit \
       ./cmd/describe-commit/ \
-    && ./describe-commit --version
+    && ./describe-commit --help
 
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
 FROM docker.io/library/alpine:3.21 AS runtime

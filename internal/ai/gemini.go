@@ -81,7 +81,23 @@ func (p *Gemini) Query(ctx context.Context, changes, commits string, opts ...Opt
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected Gemini API response status code: %d", resp.StatusCode)
+		var response struct {
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}
+
+		if err := json.NewDecoder(resp.Body).Decode(&response); err == nil && response.Error.Message != "" {
+			return nil, fmt.Errorf(
+				"the Gemini API error (status code %d): %s",
+				resp.StatusCode, response.Error.Message,
+			)
+		}
+
+		return nil, fmt.Errorf(
+			"unexpected Gemini API response status code: %d (%s)",
+			resp.StatusCode, http.StatusText(resp.StatusCode),
+		)
 	}
 
 	answer, aErr := p.parseResponse(resp)
