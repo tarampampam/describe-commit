@@ -34,8 +34,9 @@ Without any manual effort (there's no time to write commit messages, lazy develo
 - Supports different AI providers
 - Can generate short commit messages (subject line only)
 - Optionally includes emojis (🐛✨📝🚀✅♻️⬆️🔧🌐💡) in commit messages
+- Takes the commit history into account for better context
 - Runs as a standalone binary (only installed `git` is required)
-- Available as a **Docker image**
+- Available for **Linux**, **macOS**, **Windows**, and as a **Docker image**
 
 > [!NOTE]
 > Under the hood, this app does two things before returning the generated commit message:
@@ -108,29 +109,29 @@ Configuration options are applied in the following order, from highest to lowest
 1. Command-line options (e.g., `--ai-provider`, `--openai-api-key`, etc.)
 2. Environment variables (e.g., `GEMINI_API_KEY`, `OPENAI_MODEL_NAME`, etc.)
 3. A configuration file in the working directory or any parent directory, up to the root (the file can be
-   named `.describe-commit.yml` or `describe-commit.yml` and should be placed in the directory where the tool
-   is executed)
+   named `.describe-commit.yml` or `describe-commit.yml`)
 4. A configuration file in the user's configuration directory (e.g., `~/.configs/describe-commit.yml` for Linux)
 
-This means you can store API tokens in the user's configuration directory and override them with command-line
-options or a configuration file in the working directory when needed (e.g., enabling emojis only for specific
-projects).
+This means you can store API tokens and other default settings in the global user's configuration file and override
+them with command-line options or a configuration file in the working directory when needed (e.g., enabling emojis
+only for specific projects, disable commits history analysis, etc.).
 
 ## 🚀 Use Cases
 
-### ☝ Generate a commit message for the current Git repository
-
-...and commit the changes in a single command:
+<details>
+  <summary><strong>☝ Commit the changes using an AI-generated commit message in a single command</strong></summary>
 
 ```shell
 git commit -m "$(/path/to/describe-commit)"
 ```
 
-> [!NOTE]
 > A Git repository must be initialized in the specified directory, and `git` must be installed on your system.
 > Additionally, ensure that changes are staged (`git add -A`) before running the tool.
 
-### ☝ Integration with the `git`
+</details>
+
+<details>
+  <summary><strong>☝ Integration with the git</strong></summary>
 
 Add this alias to your `~/.gitconfig` file:
 
@@ -140,7 +141,7 @@ Add this alias to your `~/.gitconfig` file:
 	wip = "!f() { git add -Av && git commit -m \"$(describe-commit)\"; }; f"
 ```
 
-Now, in any repository, you can simply run:
+Now, in **any** repository, you can simply run:
 
 ```shell
 git wip
@@ -148,7 +149,10 @@ git wip
 
 And voilà! All changes will be staged and committed with a generated message.
 
-### ☝ Get a Commit Message for a Specific Directory
+</details>
+
+<details>
+  <summary><strong>☝ Get a Commit Message for a Specific Directory</strong></summary>
 
 ```shell
 describe-commit /path/to/repo
@@ -176,7 +180,10 @@ describe-commit /path/to/repo > /path/to/commit-message.txt
 
 Or do wherever you want with it.
 
-### ☝ Switch Between AI Providers
+</details>
+
+<details>
+  <summary><strong>☝ Switch Between AI Providers</strong></summary>
 
 Generate a commit message using OpenAI:
 
@@ -204,7 +211,10 @@ But if you want to use Gemini instead:
 describe-commit --ai gemini --gemini-api-key "your-gemini-api-key"
 ```
 
-### ☝ Generate a short commit message (only the first line) with emojis
+</details>
+
+<details>
+  <summary><strong>☝ Generate a short commit message (only the first line) with emojis</strong></summary>
 
 ```shell
 describe-commit -s -e
@@ -215,6 +225,8 @@ Will give you something like this:
 ```markdown
 📝 docs(README): Update project description and installation instructions
 ```
+
+</details>
 
 <!--GENERATED:APP_README-->
 ## 💻 Command line interface
