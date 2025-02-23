@@ -79,23 +79,7 @@ func (p *OpenAI) Query(ctx context.Context, changes, commits string, opts ...Opt
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		var response struct {
-			Error struct {
-				Message string `json:"message"`
-			} `json:"error"`
-		}
-
-		if err := json.NewDecoder(resp.Body).Decode(&response); err == nil && response.Error.Message != "" {
-			return nil, fmt.Errorf(
-				"the OpenAI API error (status code %d): %s",
-				resp.StatusCode, response.Error.Message,
-			)
-		}
-
-		return nil, fmt.Errorf(
-			"unexpected OpenAI API response status code: %d (%s)",
-			resp.StatusCode, http.StatusText(resp.StatusCode),
-		)
+		return nil, p.responseToError(resp)
 	}
 
 	answer, aErr := p.parseResponse(resp)
@@ -168,6 +152,27 @@ func (p *OpenAI) newRequest(
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.apiKey))
 
 	return req, nil
+}
+
+// responseToError converts the response from the OpenAI API to an error.
+func (p *OpenAI) responseToError(resp *http.Response) error {
+	var response struct {
+		Error struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err == nil && response.Error.Message != "" {
+		return fmt.Errorf(
+			"openAI API error: %s (status code: %d)",
+			response.Error.Message, resp.StatusCode,
+		)
+	}
+
+	return fmt.Errorf(
+		"unexpected OpenAI API response status code: %d (%s)",
+		resp.StatusCode, http.StatusText(resp.StatusCode),
+	)
 }
 
 // parseResponse parses the response from the OpenAI API.

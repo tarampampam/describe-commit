@@ -12,8 +12,8 @@
 `describe-commit` is a CLI tool that leverages AI to generate commit messages based on changes made in a Git repository.
 Currently, it supports the following AI providers:
 
-- OpenAI
-- Google Gemini
+- [OpenAI ChatGPT](https://openai.com/chatgpt/overview/)
+- [Google Gemini](https://deepmind.google/technologies/gemini/)
 
 It also allows users to select the desired model for content generating.
 
@@ -51,13 +51,13 @@ Without any manual effort (there's no time to write commit messages, lazy develo
 
 ## 🧩 Installation
 
-Download the latest binary for your architecture from the [releases page][link_releases]. For example, to install
-on an **amd64** system (e.g., Debian, Ubuntu):
+Download the latest binary for your architecture/OS from the [releases page][link_releases]. For example, to install
+on an **amd64** system (e.g., Debian, Ubuntu) you can run:
 
 ```shell
-curl -SsL -o ./describe-commit https://github.com/tarampampam/describe-commit/releases/latest/download/describe-commit-linux-amd64
-chmod +x ./describe-commit
-./describe-commit --help
+sudo curl -SsL -o /usr/local/bin/describe-commit https://github.com/tarampampam/describe-commit/releases/latest/download/describe-commit-linux-amd64
+sudo chmod +x /usr/local/bin/describe-commit
+describe-commit --help
 ```
 
 > [!TIP]
@@ -87,11 +87,40 @@ Alternatively, you can use the Docker image:
 
 > [!NOTE]
 > It’s recommended to avoid using the `latest` tag, as **major** upgrades may include breaking changes.
-> Instead, use specific tags in `X.Y.Z` format for version consistency.
+> Instead, use specific tags in `:X.Y.Z` or only `:X` format for version consistency.
 
-## 🚀 Usage
+## ⚙ Configuration
 
-To generate a commit message for the current Git repository, and commit the changes in a single command:
+You can configure `describe-commit` using a YAML file. Refer to [this example](describe-commit.example.yml) for
+available options.
+
+You can specify the configuration file's location using the `--config-file` option. By default, however, the
+tool searches for the file in the user's configuration directory:
+
+- **Linux**: `~/.configs/describe-commit.yml`
+- **Windows**: `%APPDATA%\describe-commit.yml`
+- **macOS**: `~/Library/Application Support/describe-commit.yml`
+
+### Configuration Options Priority
+
+Configuration options are applied in the following order, from highest to lowest priority:
+
+1. Command-line options (e.g., `--ai-provider`, `--openai-api-key`, etc.)
+2. Environment variables (e.g., `GEMINI_API_KEY`, `OPENAI_MODEL_NAME`, etc.)
+3. A configuration file in the working directory or any parent directory, up to the root (the file can be
+   named `.describe-commit.yml` or `describe-commit.yml` and should be placed in the directory where the tool
+   is executed)
+4. A configuration file in the user's configuration directory (e.g., `~/.configs/describe-commit.yml` for Linux)
+
+This means you can store API tokens in the user's configuration directory and override them with command-line
+options or a configuration file in the working directory when needed (e.g., enabling emojis only for specific
+projects).
+
+## 🚀 Use Cases
+
+### ☝ Generate a commit message for the current Git repository
+
+...and commit the changes in a single command:
 
 ```shell
 git commit -m "$(/path/to/describe-commit)"
@@ -101,13 +130,31 @@ git commit -m "$(/path/to/describe-commit)"
 > A Git repository must be initialized in the specified directory, and `git` must be installed on your system.
 > Additionally, ensure that changes are staged (`git add -A`) before running the tool.
 
-Or just to get a commit message for a specific directory:
+### ☝ Integration with the `git`
+
+Add this alias to your `~/.gitconfig` file:
+
+```ini
+[alias]
+	# Stage all changes and commit them with a generated message
+	wip = "!f() { git add -Av && git commit -m \"$(describe-commit)\"; }; f"
+```
+
+Now, in any repository, you can simply run:
+
+```shell
+git wip
+```
+
+And voilà! All changes will be staged and committed with a generated message.
+
+### ☝ Get a Commit Message for a Specific Directory
 
 ```shell
 describe-commit /path/to/repo
 ```
 
-Will output something like:
+Example output:
 
 ```markdown
 docs: Add initial README with project description
@@ -121,16 +168,29 @@ features list, installation instructions, and usage examples.
 - Highlights key features and functionalities
 ```
 
-Generate a commit message with OpenAI:
+You are able to save the output to a file:
 
-```sh
-describe-commit --ai openai --openai-api-key "your-api-key"
+```shell
+describe-commit /path/to/repo > /path/to/commit-message.txt
 ```
+
+Or do wherever you want with it.
+
+### ☝ Switch Between AI Providers
+
+Generate a commit message using OpenAI:
+
+```shell
+describe-commit --ai openai --openai-api-key "your-openai-api-key"
+```
+
+Will output something like this:
 
 ```markdown
 docs(README): Update project description and installation instructions
 
-Enhanced the README file to provide a clearer project overview and detailed installation instructions. The changes aim to improve user understanding and accessibility of the `describe-commit` CLI tool.
+Enhanced the README file to provide a clearer project overview and detailed installation instructions. The
+changes aim to improve user understanding and accessibility of the `describe-commit` CLI tool.
 
 - Added project description and AI provider support
 - Included features list for better visibility
@@ -138,27 +198,23 @@ Enhanced the README file to provide a clearer project overview and detailed inst
 - Provided usage examples for generating commit messages
 ```
 
-Generate a short commit message (only the first line) with emojis:
+But if you want to use Gemini instead:
 
-```sh
+```shell
+describe-commit --ai gemini --gemini-api-key "your-gemini-api-key"
+```
+
+### ☝ Generate a short commit message (only the first line) with emojis
+
+```shell
 describe-commit -s -e
 ```
+
+Will give you something like this:
 
 ```markdown
 📝 docs(README): Update project description and installation instructions
 ```
-
-## ⚙ Configuration
-
-You can configure `describe-commit` using a YAML file. Use [describe-commit.yml](describe-commit.example.yml) as a reference
-for the available options.
-
-The configuration file's location can be specified using the `--config-file` option. However, by default, the file
-is searched for in the user's configuration directory:
-
-- **Linux**: `~/.configs/describe-commit.yml`
-- **Windows**: `%APPDATA%\describe-commit.yml`
-- **macOS**: `~/Library/Application Support/describe-commit.yml`
 
 <!--GENERATED:APP_README-->
 ## 💻 Command line interface

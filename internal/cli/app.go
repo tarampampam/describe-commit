@@ -28,8 +28,8 @@ func NewApp(name string) *App { //nolint:funlen
 	var app = App{
 		cmd: cmd.Command{
 			Name:        name,
-			Description: "This tool uses AI to generate a commit message based on the changes made.",
-			Usage:       "[<options>] [<dir-path>]",
+			Description: "This tool leverages AI to generate commit messages based on changes made in a Git repository.",
+			Usage:       "[<options>] [<git-dir-path>]",
 			Version:     version.Version(),
 		},
 		opt: newOptionsWithDefaults(),
