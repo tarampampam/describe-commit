@@ -6,12 +6,13 @@ import (
 	"io"
 	"os"
 
-	"gopkg.in/yaml.v3"
+	"gh.tarampamp.am/describe-commit/internal/yaml"
 )
 
-// Config is used to unmarshal the configuration file content.
-type ( // pointers are used to distinguish between unset and set values (nil = unset)
+type (
+	// Config is used to unmarshal the configuration file content.
 	Config struct {
+		// pointers are used to distinguish between unset and set values (nil = unset)
 		ShortMessageOnly    *bool   `yaml:"shortMessageOnly"`
 		CommitHistoryLength *int64  `yaml:"commitHistoryLength"`
 		EnableEmoji         *bool   `yaml:"enableEmoji"`
@@ -33,19 +34,11 @@ type ( // pointers are used to distinguish between unset and set values (nil = u
 )
 
 // FromFile initializes self state by reading the configuration file from the provided path.
+// To merge values from one file with another, call this method multiple times with different paths (values
+// from the last file will overwrite the previous ones).
 func (c *Config) FromFile(path string) error {
 	if c == nil {
 		return errors.New("config is nil")
-	}
-
-	if stat, err := os.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("config file not found: %s", path)
-		}
-
-		return err
-	} else if stat.IsDir() {
-		return fmt.Errorf("config file path is a directory: %s", path)
 	}
 
 	var f, err = os.Open(path)

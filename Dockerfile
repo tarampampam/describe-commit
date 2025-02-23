@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # -✂- this stage is used to compile the application -------------------------------------------------------------------
-FROM docker.io/library/golang:1.23-alpine AS compile
+FROM docker.io/library/golang:1.24-alpine AS compile
 
 # can be passed with any prefix (like `v1.2.3@FOO`), e.g.: `docker build --build-arg "APP_VERSION=v1.2.3@FOO" .`
 ARG APP_VERSION="undefined@docker"
@@ -18,7 +18,7 @@ RUN set -x \
       -ldflags "-s -w -X gh.tarampamp.am/describe-commit/internal/version.version=${APP_VERSION}" \
       -o ./describe-commit \
       ./cmd/describe-commit/ \
-    && ./describe-commit --version
+    && ./describe-commit --help
 
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
 FROM docker.io/library/alpine:3.21 AS runtime

@@ -2,6 +2,9 @@
 /.idea
 /.vscode
 
+## Configs
+describe-commit.yml
+
 ## Binaries
 /app
 /describe-commit

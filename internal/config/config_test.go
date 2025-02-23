@@ -109,6 +109,61 @@ gemini:
 			}
 		})
 	}
+
+	t.Run("merge", func(t *testing.T) {
+		var (
+			tmpDir  = t.TempDir()
+			config1 = filepath.Join(tmpDir, "config1.yml")
+			config2 = filepath.Join(tmpDir, "config2.yml")
+		)
+
+		// create config files
+		for _, err := range []error{
+			os.WriteFile(config1, []byte(`
+shortMessageOnly: true
+gemini:
+  apiKey: gemini-api-key-1
+`), 0o600),
+			os.WriteFile(config2, []byte(`
+shortMessageOnly: false
+gemini:
+  apiKey: gemini-api-key-2
+openai:
+  apiKey: openai-api-key
+  modelName: openai-model-name
+`), 0o600),
+		} {
+			if err != nil {
+				t.Fatalf("failed to create a config file: %v", err)
+			}
+		}
+
+		var cfg config.Config
+
+		// read the first file
+		if err := cfg.FromFile(config1); err != nil {
+			t.Fatalf("failed to read the first config file: %v", err)
+		}
+
+		// read the second file
+		if err := cfg.FromFile(config2); err != nil {
+			t.Fatalf("failed to read the second config file: %v", err)
+		}
+
+		// assert the structure
+		if !reflect.DeepEqual(cfg, config.Config{
+			ShortMessageOnly: toPtr(false),
+			Gemini: &config.Gemini{
+				ApiKey: toPtr("gemini-api-key-2"),
+			},
+			OpenAI: &config.OpenAI{
+				ApiKey:    toPtr("openai-api-key"),
+				ModelName: toPtr("openai-model-name"),
+			},
+		}) {
+			t.Fatalf("unexpected config: %+v", cfg)
+		}
+	})
 }
 
 func toPtr[T any](v T) *T { return &v }

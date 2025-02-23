@@ -12,8 +12,8 @@
 `describe-commit` is a CLI tool that leverages AI to generate commit messages based on changes made in a Git repository.
 Currently, it supports the following AI providers:
 
-- OpenAI
-- Google Gemini
+- [OpenAI ChatGPT](https://openai.com/chatgpt/overview/)
+- [Google Gemini](https://deepmind.google/technologies/gemini/)
 
 It also allows users to select the desired model for content generating.
 
@@ -51,13 +51,13 @@ Without any manual effort (there's no time to write commit messages, lazy develo
 
 ## 🧩 Installation
 
-Download the latest binary for your architecture from the [releases page][link_releases]. For example, to install
-on an **amd64** system (e.g., Debian, Ubuntu):
+Download the latest binary for your architecture/OS from the [releases page][link_releases]. For example, to install
+on an **amd64** system (e.g., Debian, Ubuntu) you can run:
 
 ```shell
-curl -SsL -o ./describe-commit https://github.com/tarampampam/describe-commit/releases/latest/download/describe-commit-linux-amd64
-chmod +x ./describe-commit
-./describe-commit --help
+sudo curl -SsL -o /usr/local/bin/describe-commit https://github.com/tarampampam/describe-commit/releases/latest/download/describe-commit-linux-amd64
+sudo chmod +x /usr/local/bin/describe-commit
+describe-commit --help
 ```
 
 > [!TIP]
@@ -87,11 +87,40 @@ Alternatively, you can use the Docker image:
 
 > [!NOTE]
 > It’s recommended to avoid using the `latest` tag, as **major** upgrades may include breaking changes.
-> Instead, use specific tags in `X.Y.Z` format for version consistency.
+> Instead, use specific tags in `:X.Y.Z` or only `:X` format for version consistency.
 
-## 🚀 Usage
+## ⚙ Configuration
 
-To generate a commit message for the current Git repository, and commit the changes in a single command:
+You can configure `describe-commit` using a YAML file. Refer to [this example](describe-commit.example.yml) for
+available options.
+
+You can specify the configuration file's location using the `--config-file` option. By default, however, the
+tool searches for the file in the user's configuration directory:
+
+- **Linux**: `~/.configs/describe-commit.yml`
+- **Windows**: `%APPDATA%\describe-commit.yml`
+- **macOS**: `~/Library/Application Support/describe-commit.yml`
+
+### Configuration Options Priority
+
+Configuration options are applied in the following order, from highest to lowest priority:
+
+1. Command-line options (e.g., `--ai-provider`, `--openai-api-key`, etc.)
+2. Environment variables (e.g., `GEMINI_API_KEY`, `OPENAI_MODEL_NAME`, etc.)
+3. A configuration file in the working directory or any parent directory, up to the root (the file can be
+   named `.describe-commit.yml` or `describe-commit.yml` and should be placed in the directory where the tool
+   is executed)
+4. A configuration file in the user's configuration directory (e.g., `~/.configs/describe-commit.yml` for Linux)
+
+This means you can store API tokens in the user's configuration directory and override them with command-line
+options or a configuration file in the working directory when needed (e.g., enabling emojis only for specific
+projects).
+
+## 🚀 Use Cases
+
+### ☝ Generate a commit message for the current Git repository
+
+...and commit the changes in a single command:
 
 ```shell
 git commit -m "$(/path/to/describe-commit)"
@@ -101,13 +130,31 @@ git commit -m "$(/path/to/describe-commit)"
 > A Git repository must be initialized in the specified directory, and `git` must be installed on your system.
 > Additionally, ensure that changes are staged (`git add -A`) before running the tool.
 
-Or just to get a commit message for a specific directory:
+### ☝ Integration with the `git`
+
+Add this alias to your `~/.gitconfig` file:
+
+```ini
+[alias]
+	# Stage all changes and commit them with a generated message
+	wip = "!f() { git add -Av && git commit -m \"$(describe-commit)\"; }; f"
+```
+
+Now, in any repository, you can simply run:
+
+```shell
+git wip
+```
+
+And voilà! All changes will be staged and committed with a generated message.
+
+### ☝ Get a Commit Message for a Specific Directory
 
 ```shell
 describe-commit /path/to/repo
 ```
 
-Will output something like:
+Example output:
 
 ```markdown
 docs: Add initial README with project description
@@ -121,16 +168,29 @@ features list, installation instructions, and usage examples.
 - Highlights key features and functionalities
 ```
 
-Generate a commit message with OpenAI:
+You are able to save the output to a file:
 
-```sh
-describe-commit --ai openai --openai-api-key "your-api-key"
+```shell
+describe-commit /path/to/repo > /path/to/commit-message.txt
 ```
+
+Or do wherever you want with it.
+
+### ☝ Switch Between AI Providers
+
+Generate a commit message using OpenAI:
+
+```shell
+describe-commit --ai openai --openai-api-key "your-openai-api-key"
+```
+
+Will output something like this:
 
 ```markdown
 docs(README): Update project description and installation instructions
 
-Enhanced the README file to provide a clearer project overview and detailed installation instructions. The changes aim to improve user understanding and accessibility of the `describe-commit` CLI tool.
+Enhanced the README file to provide a clearer project overview and detailed installation instructions. The
+changes aim to improve user understanding and accessibility of the `describe-commit` CLI tool.
 
 - Added project description and AI provider support
 - Included features list for better visibility
@@ -138,58 +198,52 @@ Enhanced the README file to provide a clearer project overview and detailed inst
 - Provided usage examples for generating commit messages
 ```
 
-Generate a short commit message (only the first line) with emojis:
+But if you want to use Gemini instead:
 
-```sh
+```shell
+describe-commit --ai gemini --gemini-api-key "your-gemini-api-key"
+```
+
+### ☝ Generate a short commit message (only the first line) with emojis
+
+```shell
 describe-commit -s -e
 ```
+
+Will give you something like this:
 
 ```markdown
 📝 docs(README): Update project description and installation instructions
 ```
 
-## ⚙ Configuration
+<!--GENERATED:APP_README-->
+## 💻 Command line interface
 
-You can configure `describe-commit` using a YAML file. Use [describe-commit.yml](describe-commit.yml) as a reference
-for the available options.
-
-The configuration file's location can be specified using the `--config-file` option. However, by default, the file
-is searched for in the user's configuration directory:
-
-- **Linux**: `~/.configs/describe-commit.yml`
-- **Windows**: `%APPDATA%\describe-commit.yml`
-- **macOS**: `~/Library/Application Support/describe-commit.yml`
-
-<!--GENERATED:CLI_DOCS-->
-<!-- Documentation inside this block generated by github.com/urfave/cli-docs/v3; DO NOT EDIT -->
-## CLI interface
-
-To debug the application, set the DEBUG environment variable to `true`.
-
-This tool uses AI to generate a commit message based on the changes made.
+```
+Description:
+   This tool uses AI to generate a commit message based on the changes made.
 
 Usage:
+   describe-commit [<options>] [<dir-path>]
 
-```bash
-$ describe-commit [GLOBAL FLAGS] [COMMAND] [COMMAND FLAGS] [dir-path]
+Version:
+   0.0.0@undefined
+
+Options:
+   --config-file="…", -c="…"                        Path to the configuration file (default: depends/on/your-os/describe-commit.yml) [$CONFIG_FILE]
+   --short-message-only, -s                         Generate a short commit message (subject line) only [$SHORT_MESSAGE_ONLY]
+   --commit-history-length="…", --cl="…", --hl="…"  Number of previous commits from the Git history (0 = disabled) (default: 20) [$COMMIT_HISTORY_LENGTH]
+   --enable-emoji, -e                               Enable emoji in the commit message [$ENABLE_EMOJI]
+   --max-output-tokens="…"                          Maximum number of tokens in the output message (default: 500) [$MAX_OUTPUT_TOKENS]
+   --ai-provider="…", --ai="…"                      AI provider name (gemini|openai) (default: gemini) [$AI_PROVIDER]
+   --gemini-api-key="…", --ga="…"                   Gemini API key (https://bit.ly/4jZhiKI, as of February 2025 it's free) [$GEMINI_API_KEY]
+   --gemini-model-name="…", --gm="…"                Gemini model name (https://bit.ly/4i02ARR) (default: gemini-2.0-flash) [$GEMINI_MODEL_NAME]
+   --openai-api-key="…", --oa="…"                   OpenAI API key (https://bit.ly/4i03NbR, you need to add funds to your account) [$OPENAI_API_KEY]
+   --openai-model-name="…", --om="…"                OpenAI model name (https://bit.ly/4hXCXkL) (default: gpt-4o-mini) [$OPENAI_MODEL_NAME]
+   --help, -h                                       Show help
+   --version, -v                                    Print the version
 ```
-
-Global flags:
-
-| Name                                           | Description                                                                                            |               Default value               |  Environment variables  |
-|------------------------------------------------|--------------------------------------------------------------------------------------------------------|:-----------------------------------------:|:-----------------------:|
-| `--config-file="…"` (`-c`)                     | path to the configuration file                                                                         | `/depends/on/your-os/describe-commit.yml` |      `CONFIG_FILE`      |
-| `--short-message-only` (`-s`)                  | generate a short commit message (subject line) only                                                    |                  `false`                  |  `SHORT_MESSAGE_ONLY`   |
-| `--commit-history-length="…"` (`--cl`, `--hl`) | number of previous commits from the Git history to consider as context for the AI model (0 = disabled) |                   `20`                    | `COMMIT_HISTORY_LENGTH` |
-| `--enable-emoji` (`-e`)                        | enable emoji in the commit message                                                                     |                  `false`                  |     `ENABLE_EMOJI`      |
-| `--max-output-tokens="…"`                      | maximum number of tokens in the output message                                                         |                   `500`                   |   `MAX_OUTPUT_TOKENS`   |
-| `--ai-provider="…"` (`--ai`)                   | AI provider name (gemini/openai)                                                                       |                 `gemini`                  |      `AI_PROVIDER`      |
-| `--gemini-api-key="…"` (`--ga`)                | Gemini API key (https://bit.ly/4jZhiKI, as of February 2025 it's free)                                 |                                           |    `GEMINI_API_KEY`     |
-| `--gemini-model-name="…"` (`--gm`)             | Gemini model name (https://bit.ly/4i02ARR)                                                             |            `gemini-2.0-flash`             |   `GEMINI_MODEL_NAME`   |
-| `--openai-api-key="…"` (`--oa`)                | OpenAI API key (https://bit.ly/4i03NbR, you need to add funds to your account to access the API)       |                                           |    `OPENAI_API_KEY`     |
-| `--openai-model-name="…"` (`--om`)             | OpenAI model name (https://bit.ly/4hXCXkL)                                                             |               `gpt-4o-mini`               |   `OPENAI_MODEL_NAME`   |
-
-<!--/GENERATED:CLI_DOCS-->
+<!--/GENERATED:APP_README-->
 
 ## License
 

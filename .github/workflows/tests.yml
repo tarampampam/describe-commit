@@ -71,9 +71,11 @@ jobs:
     needs: [lint-and-test]
     steps:
       - uses: actions/checkout@v4
+      - {uses: gacts/github-slug@v1, id: slug}
       - uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
+          build-args: "APP_VERSION=${{ steps.slug.outputs.branch-name-slug }}@${{ steps.slug.outputs.commit-hash-short }}"
           push: false
           tags: app:local
