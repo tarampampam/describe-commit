@@ -221,10 +221,10 @@ Will give you something like this:
 
 ```
 Description:
-   This tool uses AI to generate a commit message based on the changes made.
+   This tool leverages AI to generate commit messages based on changes made in a Git repository.
 
 Usage:
-   describe-commit [<options>] [<dir-path>]
+   describe-commit [<options>] [<git-dir-path>]
 
 Version:
    0.0.0@undefined
