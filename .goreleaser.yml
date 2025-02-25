@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: describe-commit
+
+before:
+  hooks:
+    - go generate -skip readme ./...
+    - go build -o /dev/null ./cmd/describe-commit
+
+builds: # https://goreleaser.com/customization/builds/go/
+  - main: ./cmd/describe-commit
+    binary: describe-commit
+    goos: [windows, darwin, linux]
+    goarch: [amd64, arm, arm64]
+    env: [CGO_ENABLED=0]
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    flags: [-trimpath]
+    ldflags: ['-s -w -X gh.tarampamp.am/describe-commit/internal/version.version={{ .Version }}']
+
+changelog: {disable: true} # https://goreleaser.com/customization/changelog/
+
+release: # https://goreleaser.com/customization/release/
+  draft: true # if true, will not auto-publish the release
+  mode: append
+  footer: |
+    {{ if isEnvSet "DOCKER_IMAGES" }}
+    ## 🐋 Docker image
+
+    ```cpp
+    {{ .Env.DOCKER_IMAGES }}
+    ```
+    {{ end }}
+
+archives: # https://goreleaser.com/customization/archive/
+  - name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
+    formats: [gz, binary]
+    files: [none*]
+    format_overrides: [{goos: windows, formats: [zip, binary]}]
+
+checksum: # https://goreleaser.com/customization/checksum/
+  algorithm: sha256
+  split: false # if true, will create one checksum file for each artifact
+  name_template: checksums.txt
+
+nfpms: # https://goreleaser.com/customization/nfpm/
+  - file_name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
+    maintainer: '{{ envOrDefault "OWNER" "Tarampampam" }}'
+    description: CLI tool that leverages AI to generate commit messages based on changes made in a Git repository
+    bindir: /usr/local/bin
+    formats: [apk, deb, rpm, archlinux]
+    dependencies: [git]
+
+# TODO(@jetexe): Add AUR support
+#aurs: # https://goreleaser.com/customization/aur/

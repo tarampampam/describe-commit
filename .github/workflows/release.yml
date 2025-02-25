@@ -8,52 +8,62 @@ on:
   workflow_dispatch: {}
 
 jobs:
+  values:
+    name: Values
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.out }}
+      owner: ${{ steps.owner.outputs.out }}
+      repo: ${{ steps.repo.outputs.out }}
+      docker-images: ${{ steps.docker-images.outputs.out }}
+    steps:
+      - {uses: gacts/github-slug@v1, id: slug}
+      - {id: version, run: 'echo "out=${{ steps.slug.outputs.version-semantic }}" > "$GITHUB_OUTPUT"'}
+      - {id: owner,   run: 'echo "out=${{ github.actor }}" > "$GITHUB_OUTPUT"'}
+      - {id: repo,    run: 'echo "out=${{ github.event.repository.name }}" > "$GITHUB_OUTPUT"'}
+      - id: docker-images
+        env:
+          GH_IMAGE: ghcr.io/${{ steps.owner.outputs.out }}/${{ steps.repo.outputs.out }}
+          VERSION: ${{ steps.version.outputs.out }}
+          MAJOR: ${{ steps.slug.outputs.version-major }}
+          MINOR: ${{ steps.slug.outputs.version-minor }}
+        run: |
+          echo 'out<<EOF' >> $GITHUB_OUTPUT
+          echo "$GH_IMAGE:latest" >> "$GITHUB_OUTPUT"
+          echo "$GH_IMAGE:$MAJOR" >> "$GITHUB_OUTPUT"
+          echo "$GH_IMAGE:$MAJOR.$MINOR" >> "$GITHUB_OUTPUT"
+          echo "$GH_IMAGE:$VERSION" >> "$GITHUB_OUTPUT"
+          echo 'EOF' >> $GITHUB_OUTPUT
+
   build-app:
     name: Build the app
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [linux, darwin, windows]
-        arch: [amd64, arm64]
+    needs: [values]
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     steps:
-      - uses: actions/checkout@v4
-      - {uses: gacts/github-slug@v1, id: slug}
-      - id: values
-        run: |
-          echo "bin-name=describe-commit-${{ matrix.os }}-${{ matrix.arch }}`[ ${{ matrix.os }} = 'windows' ] && echo '.exe'`" >> $GITHUB_OUTPUT
+      - {uses: actions/checkout@v4, with: {fetch-depth: 0}}
       - {uses: actions/setup-go@v5, with: {go-version-file: go.mod}}
-      - run: go generate -skip readme ./...
-      - env:
-          GOOS: ${{ matrix.os }}
-          GOARCH: ${{ matrix.arch }}
-          CGO_ENABLED: 0
-          LDFLAGS: -s -w -X gh.tarampamp.am/describe-commit/internal/version.version=${{ steps.slug.outputs.version-semantic }}
-        run: go build -trimpath -ldflags "$LDFLAGS" -o "./${{ steps.values.outputs.bin-name }}" ./cmd/describe-commit/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: describe-commit-${{ matrix.os }}-${{ matrix.arch }}
-          path: ./${{ steps.values.outputs.bin-name }}
-          if-no-files-found: error
-          retention-days: 1
-      - uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./${{ steps.values.outputs.bin-name }}
-          asset_name: ${{ steps.values.outputs.bin-name }}
-          tag: ${{ github.ref }}
+      - uses: goreleaser/goreleaser-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ needs.values.outputs.owner }}
+          DOCKER_IMAGES: ${{ needs.values.outputs.docker-images }}
+        with: {args: release --clean}
+      - uses: actions/attest-build-provenance@v2
+        with: {subject-checksums: ./dist/checksums.txt}
 
   build-docker-image:
     name: Build the docker image
     runs-on: ubuntu-latest
+    needs: [values]
+    permissions: {packages: write}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - {uses: gacts/github-slug@v1, id: slug}
+        with: {registry: ghcr.io, username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}'}
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
@@ -62,9 +72,5 @@ jobs:
           file: ./Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          build-args: "APP_VERSION=${{ steps.slug.outputs.version-semantic }}"
-          tags: |
-            ghcr.io/${{ github.actor }}/${{ github.event.repository.name }}:latest
-            ghcr.io/${{ github.actor }}/${{ github.event.repository.name }}:${{ steps.slug.outputs.version }}
-            ghcr.io/${{ github.actor }}/${{ github.event.repository.name }}:${{ steps.slug.outputs.version-major }}.${{ steps.slug.outputs.version-minor }}
-            ghcr.io/${{ github.actor }}/${{ github.event.repository.name }}:${{ steps.slug.outputs.version-major }}
+          build-args: "APP_VERSION=${{ needs.values.outputs.version }}"
+          tags: ${{ needs.values.outputs.docker-images }}
