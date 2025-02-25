@@ -12,6 +12,7 @@ describe-commit.yml
 ## Temp dirs & trash
 /temp
 /tmp
+/dist
 .DS_Store
 /go.work*
 *.cache

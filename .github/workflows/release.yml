@@ -11,37 +11,11 @@ jobs:
   build-app:
     name: Build the app
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [linux, darwin, windows]
-        arch: [amd64, arm64]
     steps:
       - uses: actions/checkout@v4
-      - {uses: gacts/github-slug@v1, id: slug}
-      - id: values
-        run: |
-          echo "bin-name=describe-commit-${{ matrix.os }}-${{ matrix.arch }}`[ ${{ matrix.os }} = 'windows' ] && echo '.exe'`" >> $GITHUB_OUTPUT
       - {uses: actions/setup-go@v5, with: {go-version-file: go.mod}}
-      - run: go generate -skip readme ./...
-      - env:
-          GOOS: ${{ matrix.os }}
-          GOARCH: ${{ matrix.arch }}
-          CGO_ENABLED: 0
-          LDFLAGS: -s -w -X gh.tarampamp.am/describe-commit/internal/version.version=${{ steps.slug.outputs.version-semantic }}
-        run: go build -trimpath -ldflags "$LDFLAGS" -o "./${{ steps.values.outputs.bin-name }}" ./cmd/describe-commit/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: describe-commit-${{ matrix.os }}-${{ matrix.arch }}
-          path: ./${{ steps.values.outputs.bin-name }}
-          if-no-files-found: error
-          retention-days: 1
-      - uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./${{ steps.values.outputs.bin-name }}
-          asset_name: ${{ steps.values.outputs.bin-name }}
-          tag: ${{ github.ref }}
+      - uses: goreleaser/goreleaser-action@v6
+        env: {OWNER: '${{ github.actor }}'}
 
   build-docker-image:
     name: Build the docker image
