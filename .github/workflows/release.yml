@@ -28,10 +28,12 @@ jobs:
           MAJOR: ${{ steps.slug.outputs.version-major }}
           MINOR: ${{ steps.slug.outputs.version-minor }}
         run: |
-          echo "out=$GH_IMAGE:latest" > "$GITHUB_OUTPUT"
-          echo "out=$GH_IMAGE:$VERSION" >> "$GITHUB_OUTPUT"
-          echo "out=$GH_IMAGE:$MAJOR.$MINOR" >> "$GITHUB_OUTPUT"
-          echo "out=$GH_IMAGE:$MAJOR" >> "$GITHUB_OUTPUT"
+          echo 'out<<EOF' >> $GITHUB_OUTPUT
+          echo "$GH_IMAGE:latest" >> "$GITHUB_OUTPUT"
+          echo "$GH_IMAGE:$VERSION" >> "$GITHUB_OUTPUT"
+          echo "$GH_IMAGE:$MAJOR.$MINOR" >> "$GITHUB_OUTPUT"
+          echo "$GH_IMAGE:$MAJOR" >> "$GITHUB_OUTPUT"
+          echo 'EOF' >> $GITHUB_OUTPUT
 
   build-app:
     name: Build the app
@@ -45,6 +47,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ needs.values.outputs.owner }}
+          DOCKER_IMAGES: ${{ needs.values.outputs.docker-images }}
         with: {args: release --clean}
 
   build-docker-image:
