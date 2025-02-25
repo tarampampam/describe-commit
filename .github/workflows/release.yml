@@ -54,6 +54,44 @@ jobs:
         with: {args: release --clean}
       - uses: actions/attest-build-provenance@v2
         with: {subject-checksums: ./dist/checksums.txt}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            dist/*.deb
+            dist/*.apk
+            dist/*.rpm
+
+  upload-packages:
+    name: Upload the packages
+    runs-on: ubuntu-latest
+    needs: [build-app]
+    strategy:
+      matrix:
+        include:
+          - {format: alpine, file: describe-commit-linux-amd64.apk}
+          - {format: alpine, file: describe-commit-linux-arm64.apk}
+          - {format: alpine, file: describe-commit-linux-arm.apk}
+          - {format: deb, file: describe-commit-linux-amd64.deb}
+          - {format: deb, file: describe-commit-linux-arm64.deb}
+          - {format: deb, file: describe-commit-linux-arm.deb}
+          - {format: rpm, file: describe-commit-linux-amd64.rpm}
+          - {format: rpm, file: describe-commit-linux-arm64.rpm}
+          - {format: rpm, file: describe-commit-linux-arm.rpm}
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {name: packages}
+      - uses: cloudsmith-io/action@v0.6.14
+        with:
+          api-key: ${{ secrets.CLOUDSMITH_API_KEY }}
+          command: push
+          format: ${{ matrix.format }}
+          owner: ${{ env.CLOUDSMITH_OWNER }}
+          repo: ${{ env.CLOUDSMITH_REPO }}
+          republish: 'true'
+          file: ${{ matrix.file }}
 
   build-docker-image:
     name: Build the docker image
