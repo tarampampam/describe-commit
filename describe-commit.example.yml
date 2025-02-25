@@ -37,7 +37,7 @@ gemini:
 
   # Gemini model name (https://bit.ly/4i02ARR)
   # @type {string}
-  modelName: <gemini-model-name>
+  #modelName: <gemini-model-name>
 
 # OpenAI provider configuration
 openai:
@@ -47,4 +47,4 @@ openai:
 
   # OpenAI model name (https://bit.ly/4hXCXkL)
   # @type {string}
-  modelName: <openai-model-name>
+  #modelName: <openai-model-name>
