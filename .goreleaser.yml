@@ -4,7 +4,9 @@ version: 2
 project_name: describe-commit
 
 before:
-  hooks: [go generate -skip readme ./...]
+  hooks:
+    - go generate -skip readme ./...
+    - go build -o /dev/null ./cmd/describe-commit
 
 builds: # https://goreleaser.com/customization/builds/go/
   - main: ./cmd/describe-commit
@@ -48,3 +50,6 @@ nfpms: # https://goreleaser.com/customization/nfpm/
     bindir: /usr/local/bin
     formats: [apk, deb, rpm, archlinux]
     dependencies: [git]
+
+# TODO(@jetexe): Add AUR support
+#aurs: # https://goreleaser.com/customization/aur/

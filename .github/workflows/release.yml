@@ -9,7 +9,7 @@ on:
 
 jobs:
   values:
-    name: Generate values for the release
+    name: Values
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.out }}
