@@ -1,6 +1,8 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
 
+project_name: describe-commit
+
 before:
   hooks: [go generate -skip readme ./...]
 
@@ -16,6 +18,8 @@ builds: # https://goreleaser.com/customization/builds/go/
 
 release: # https://goreleaser.com/customization/release/
   draft: true # if true, will not auto-publish the release
+  footer: |
+
 
 archives: # https://goreleaser.com/customization/archive/
   - name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
@@ -30,7 +34,7 @@ checksum: # https://goreleaser.com/customization/checksum/
 
 nfpms: # https://goreleaser.com/customization/nfpm/
   - file_name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
-    maintainer: '{{ .Env.OWNER }}'
+    maintainer: '{{ envOrDefault "OWNER" "Tarampampam" }}'
     description: CLI tool that leverages AI to generate commit messages based on changes made in a Git repository
     bindir: /usr/local/bin
     formats: [apk, deb, rpm, archlinux]
