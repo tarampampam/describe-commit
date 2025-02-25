@@ -72,15 +72,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {format: alpine, file: describe-commit-linux-amd64.apk}
-          - {format: alpine, file: describe-commit-linux-arm64.apk}
-          - {format: alpine, file: describe-commit-linux-arm.apk}
-          - {format: deb, file: describe-commit-linux-amd64.deb}
-          - {format: deb, file: describe-commit-linux-arm64.deb}
-          - {format: deb, file: describe-commit-linux-arm.deb}
-          - {format: rpm, file: describe-commit-linux-amd64.rpm}
-          - {format: rpm, file: describe-commit-linux-arm64.rpm}
-          - {format: rpm, file: describe-commit-linux-arm.rpm}
+          - {format: alpine, distro: alpine, file: describe-commit-linux-amd64.apk}
+          - {format: alpine, distro: alpine, file: describe-commit-linux-arm64.apk}
+          - {format: alpine, distro: alpine, file: describe-commit-linux-arm.apk}
+          - {format: deb, distro: any-distro, file: describe-commit-linux-amd64.deb}
+          - {format: deb, distro: any-distro, file: describe-commit-linux-arm64.deb}
+          - {format: deb, distro: any-distro, file: describe-commit-linux-arm.deb}
+          - {format: rpm, distro: any-distro, file: describe-commit-linux-amd64.rpm}
+          - {format: rpm, distro: any-distro, file: describe-commit-linux-arm64.rpm}
+          - {format: rpm, distro: any-distro, file: describe-commit-linux-arm.rpm}
     steps:
       - uses: actions/download-artifact@v4
         with: {name: packages}
@@ -90,7 +90,7 @@ jobs:
           api-key: ${{ secrets.CLOUDSMITH_API_KEY }}
           command: push
           format: ${{ matrix.format }}
-          distro: any-distro
+          distro: ${{ matrix.distro }}
           release: any-version
           owner: ${{ vars.CLOUDSMITH_OWNER }}
           repo: ${{ vars.CLOUDSMITH_REPO }}
