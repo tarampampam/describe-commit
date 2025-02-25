@@ -16,14 +16,16 @@ builds: # https://goreleaser.com/customization/builds/go/
     flags: [-trimpath]
     ldflags: ['-s -w -X gh.tarampamp.am/describe-commit/internal/version.version={{ .Version }}']
 
+changelog: {disable: true} # https://goreleaser.com/customization/changelog/
+
 release: # https://goreleaser.com/customization/release/
   draft: true # if true, will not auto-publish the release
   mode: append
   footer: |
     {{ if isEnvSet "DOCKER_IMAGES" }}
-    ## Docker image
+    ## 🐋 Docker image
 
-    ```
+    ```cpp
     {{ .Env.DOCKER_IMAGES }}
     ```
     {{ end }}
