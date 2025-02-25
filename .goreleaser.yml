@@ -38,6 +38,10 @@ archives: # https://goreleaser.com/customization/archive/
     files: [none*]
     format_overrides: [{goos: windows, formats: [zip, binary]}]
 
+source:
+  enabled: true
+  name_template: '{{ .ProjectName }}_v{{ .Version }}_sources'
+
 checksum: # https://goreleaser.com/customization/checksum/
   algorithm: sha256
   split: false # if true, will create one checksum file for each artifact
@@ -51,5 +55,45 @@ nfpms: # https://goreleaser.com/customization/nfpm/
     formats: [apk, deb, rpm, archlinux]
     dependencies: [git]
 
-# TODO(@jetexe): Add AUR support
-#aurs: # https://goreleaser.com/customization/aur/
+aurs:
+  - name: describe-commit-bin
+    homepage: 'https://github.com/tarampampam/describe-commit'
+    description: CLI tool that leverages AI to generate commit messages based on changes made in a Git repository
+    maintainers:
+      - tarampampam <murmur at cats dot rulez>
+      - jetexe <aur at jetexe dot net>
+    license: MIT
+    private_key: '{{ .Env.AUR_SSH_PRIVATE }}'
+    git_url: ssh://aur@aur.archlinux.org/describe-commit-bin.git
+    provides: [describe-commit]
+    conflicts: [describe-commit]
+    depends: [git]
+    commit_author:
+        name: '{{ .Env.AUR_GIT_USERNAME }}'
+        email: '{{ .Env.AUR_GIT_EMAIL }}'
+
+aur_sources:
+  - name: describe-commit
+    homepage: 'https://github.com/tarampampam/describe-commit'
+    description: CLI tool that leverages AI to generate commit messages based on changes made in a Git repository
+    maintainers:
+      - tarampampam <murmur at cats dot rulez>
+      - jetexe <aur at jetexe dot net>
+    license: MIT
+    private_key: '{{ .Env.AUR_SSH_PRIVATE }}'
+    git_url: ssh://aur@aur.archlinux.org/describe-commit-bin.git
+    depends: [git]
+    makedepends:
+      - go
+    build: |-
+      cd "$srcdir/${pkgname}"
+      go generate -skip readme ./...
+      CGO_ENABLED=0 go build \
+        -trimpath \
+        -ldflags "-s -w -X gh.tarampamp.am/describe-commit/internal/version.version=${pkgver}" \
+        -o ./describe-commit \
+        ./cmd/describe-commit/
+    commit_author:
+      name: '{{ .Env.AUR_GIT_USERNAME }}'
+      email: '{{ .Env.AUR_GIT_EMAIL }}'
+
