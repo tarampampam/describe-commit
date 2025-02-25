@@ -52,14 +52,118 @@ Without any manual effort (there's no time to write commit messages, lazy develo
 
 ## 🧩 Installation
 
-Download the latest binary for your architecture/OS from the [releases page][link_releases]. For example, to install
-on an **amd64** system (e.g., Debian, Ubuntu) you can run:
+### 📦 Debian/Ubuntu-based (.deb) systems
+
+Execute the following commands in order:
 
 ```shell
-sudo curl -SsL -o /usr/local/bin/describe-commit https://github.com/tarampampam/describe-commit/releases/latest/download/describe-commit-linux-amd64
-sudo chmod +x /usr/local/bin/describe-commit
-describe-commit --help
+# setup the repository automatically
+curl -1sLf https://dl.cloudsmith.io/public/tarampampam/describe-commit/setup.deb.sh | sudo -E bash
+
+# install the package
+sudo apt install describe-commit
 ```
+
+<details>
+  <summary>Uninstalling</summary>
+
+```shell
+sudo apt remove describe-commit
+rm /etc/apt/sources.list.d/tarampampam-describe-commit.list
+```
+
+</details>
+
+### 📦 RedHat (.rpm) systems
+
+```shell
+# setup the repository automatically
+curl -1sLf https://dl.cloudsmith.io/public/tarampampam/describe-commit/setup.rpm.sh | sudo -E bash
+
+# install the package
+sudo dnf install describe-commit # RedHat, CentOS, etc.
+sudo yum install describe-commit # Fedora, etc.
+sudo zypper install describe-commit # OpenSUSE, etc.
+```
+
+<details>
+  <summary>Uninstalling</summary>
+
+```shell
+# RedHat, CentOS, Fedora, etc.
+sudo dnf remove describe-commit
+rm /etc/yum.repos.d/tarampampam-describe-commit.repo
+rm /etc/yum.repos.d/tarampampam-describe-commit-source.repo
+
+# OpenSUSE, etc.
+sudo zypper remove describe-commit
+zypper rr tarampampam-describe-commit
+zypper rr tarampampam-describe-commit-source
+```
+
+</details>
+
+### 📦 Alpine Linux
+
+```shell
+# bash is required for the setup script
+sudo apk add --no-cache bash
+
+# setup the repository automatically
+curl -1sLf https://dl.cloudsmith.io/public/tarampampam/describe-commit/setup.alpine.sh | sudo -E bash
+
+# install the package
+sudo apk add describe-commit
+```
+
+<details>
+  <summary>Uninstalling</summary>
+
+```shell
+sudo apk del describe-commit
+$EDITOR /etc/apk/repositories # remove the line with the repository
+```
+
+</details>
+
+### 📦 AUR (Arch Linux)
+
+```shell
+# TODO(@jetexe): Add instructions for the AUR package
+```
+
+<details>
+  <summary>Uninstalling</summary>
+
+```shell
+# TODO(@jetexe): Add instructions for the AUR package
+```
+
+</details>
+
+### 📦 Binary (Linux, macOS, Windows)
+
+Download the latest binary for your architecture/OS from the [releases page][link_releases]. For example, to install
+the latest version to the `/usr/local/bin` directory on an **amd64** system (e.g., Debian, Ubuntu), you can run:
+
+```shell
+# download and install the binary
+curl -SsL \
+  https://github.com/tarampampam/describe-commit/releases/latest/download/describe-commit-linux-amd64.gz | \
+  gunzip -c | sudo tee /usr/local/bin/describe-commit > /dev/null
+
+# make the binary executable
+sudo chmod +x /usr/local/bin/describe-commit
+```
+
+<details>
+  <summary>Uninstalling</summary>
+
+```shell
+sudo rm /usr/local/bin/describe-commit
+```
+
+</details>
 
 > [!TIP]
 > Each release includes binaries for **linux**, **darwin** (macOS) and **windows** (`amd64` and `arm64` architectures).
@@ -68,13 +172,22 @@ describe-commit --help
 
 [link_releases]:https://github.com/tarampampam/describe-commit/releases
 
-Alternatively, you can use the Docker image:
+### 📦 Docker image
+
+Also, you can use the Docker image:
 
 | Registry                               | Image                                 |
 |----------------------------------------|---------------------------------------|
 | [GitHub Container Registry][link_ghcr] | `ghcr.io/tarampampam/describe-commit` |
 
+> [!NOTE]
+> It’s recommended to avoid using the `latest` tag, as **major** upgrades may include breaking changes.
+> Instead, use specific tags in `:X.Y.Z` or only `:X` format for version consistency.
+
 [link_ghcr]:https://github.com/tarampampam/describe-commit/pkgs/container/describe-commit
+
+<details>
+  <summary>Example</summary>
 
 > ```shell
 > docker run --rm \
@@ -86,9 +199,7 @@ Alternatively, you can use the Docker image:
 >     ghcr.io/tarampampam/describe-commit ...
 > ```
 
-> [!NOTE]
-> It’s recommended to avoid using the `latest` tag, as **major** upgrades may include breaking changes.
-> Instead, use specific tags in `:X.Y.Z` or only `:X` format for version consistency.
+</details>
 
 ## ⚙ Configuration
 
@@ -116,29 +227,25 @@ This means you can store API tokens and other default settings in the global use
 them with command-line options or a configuration file in the working directory when needed (e.g., enabling emojis
 only for specific projects, disable commits history analysis, etc.).
 
-## 🚀 Use Cases
+## 🚀 Use Cases (usage examples)
 
-<details>
-  <summary><strong>☝ Commit the changes using an AI-generated commit message in a single command</strong></summary>
+#### ☝ Commit the changes using an AI-generated commit message in a single command
 
 ```shell
-git commit -m "$(/path/to/describe-commit)"
+git commit -m "$(describe-commit)"
 ```
 
 > A Git repository must be initialized in the specified directory, and `git` must be installed on your system.
 > Additionally, ensure that changes are staged (`git add -A`) before running the tool.
 
-</details>
-
-<details>
-  <summary><strong>☝ Integration with the git</strong></summary>
+#### ☝ Integration with the git
 
 Add this alias to your `~/.gitconfig` file:
 
 ```ini
 [alias]
-	# Stage all changes and commit them with a generated message
-	wip = "!f() { git add -Av && git commit -m \"$(describe-commit)\"; }; f"
+  # Stage all changes and commit them with a generated message
+  wip = "!f() { git add -Av && git commit -m \"$(describe-commit)\"; }; f"
 ```
 
 Now, in **any** repository, you can simply run:
@@ -148,8 +255,6 @@ git wip
 ```
 
 And voilà! All changes will be staged and committed with a generated message.
-
-</details>
 
 <details>
   <summary><strong>☝ Get a Commit Message for a Specific Directory</strong></summary>
@@ -257,7 +362,7 @@ Options:
 ```
 <!--/GENERATED:APP_README-->
 
-## License
+## 📜 License
 
 This is open-sourced software licensed under the [MIT License][link_license].
 
