@@ -18,6 +18,7 @@ builds: # https://goreleaser.com/customization/builds/go/
 
 release: # https://goreleaser.com/customization/release/
   draft: true # if true, will not auto-publish the release
+  mode: append
   footer: |
     {{ if isEnvSet "DOCKER_IMAGES" }}
     ## Docker image
