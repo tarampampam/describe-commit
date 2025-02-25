@@ -51,6 +51,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ needs.values.outputs.owner }}
           DOCKER_IMAGES: ${{ needs.values.outputs.docker-images }}
+          AUR_GIT_USERNAME: ${{ secrets.AUR_GIT_USERNAME }}
+          AUR_GIT_EMAIL: ${{ secrets.AUR_GIT_EMAIL }}
+          AUR_SSH_PRIVATE: ${{ secrets.AUR_SSH_PRIVATE }}
         with: {args: release --clean}
       - uses: actions/attest-build-provenance@v2
         with: {subject-checksums: ./dist/checksums.txt}
