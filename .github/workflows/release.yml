@@ -19,11 +19,11 @@ jobs:
     steps:
       - {uses: gacts/github-slug@v1, id: slug}
       - {id: version, run: 'echo "out=${{ steps.slug.outputs.version-semantic }}" > "$GITHUB_OUTPUT"'}
-      - {id: owner,   run: 'echo "out=${{ github.actor }}" > "$GITHUB_OUTPUT"'}
+      - {id: owner,   run: 'echo "out=${{ github.repository_owner }}" > "$GITHUB_OUTPUT"'}
       - {id: repo,    run: 'echo "out=${{ github.event.repository.name }}" > "$GITHUB_OUTPUT"'}
       - id: docker-images
         env:
-          GH_IMAGE: ghcr.io/${{ steps.owner.outputs.out }}/${{ steps.repo.outputs.out }}
+          GH_IMAGE: ghcr.io/${{ github.repository }}
           VERSION: ${{ steps.version.outputs.out }}
           MAJOR: ${{ steps.slug.outputs.version-major }}
           MINOR: ${{ steps.slug.outputs.version-minor }}
@@ -51,6 +51,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ needs.values.outputs.owner }}
           DOCKER_IMAGES: ${{ needs.values.outputs.docker-images }}
+          AUR_GIT_USERNAME: ${{ secrets.AUR_GIT_USERNAME }}
+          AUR_GIT_EMAIL: ${{ secrets.AUR_GIT_EMAIL }}
+          AUR_SSH_PRIVATE: ${{ secrets.AUR_SSH_PRIVATE }}
         with: {args: release --clean}
       - uses: actions/attest-build-provenance@v2
         with: {subject-checksums: ./dist/checksums.txt}

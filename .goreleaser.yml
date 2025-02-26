@@ -33,10 +33,16 @@ release: # https://goreleaser.com/customization/release/
     {{ end }}
 
 archives: # https://goreleaser.com/customization/archive/
-  - name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
+  - id: default
+    name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
     formats: [gz, binary]
     files: [none*]
     format_overrides: [{goos: windows, formats: [zip, binary]}]
+  - id: aur
+    name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
+    formats: [tar.gz]
+    files: [LICENSE]
+    format_overrides: [{goos: windows, formats: [none]}]
 
 checksum: # https://goreleaser.com/customization/checksum/
   algorithm: sha256
@@ -51,5 +57,53 @@ nfpms: # https://goreleaser.com/customization/nfpm/
     formats: [apk, deb, rpm, archlinux]
     dependencies: [git]
 
-# TODO(@jetexe): Add AUR support
-#aurs: # https://goreleaser.com/customization/aur/
+aurs: # https://goreleaser.com/customization/aur/
+  - name: describe-commit-bin
+    ids: [aur]
+    homepage: 'https://github.com/tarampampam/describe-commit'
+    description: CLI tool that leverages AI to generate commit messages based on changes made in a Git repository
+    maintainers:
+      - tarampampam <murmur at cats dot rulez>
+      - jetexe <aur at jetexe dot net>
+    license: MIT
+    private_key: '{{ .Env.AUR_SSH_PRIVATE }}'
+    git_url: ssh://aur@aur.archlinux.org/describe-commit-bin.git
+    provides: [describe-commit]
+    conflicts: [describe-commit]
+    depends: [git]
+    commit_author:
+      name: '{{ .Env.AUR_GIT_USERNAME }}'
+      email: '{{ .Env.AUR_GIT_EMAIL }}'
+
+# Source archives for AUR sources package
+source: # https://goreleaser.com/customization/source/
+  enabled: true
+  name_template: '{{ .ProjectName }}_v{{ .Version }}_sources'
+
+aur_sources: # https://goreleaser.com/customization/aursources/
+  - name: describe-commit
+    homepage: 'https://github.com/tarampampam/describe-commit'
+    description: CLI tool that leverages AI to generate commit messages based on changes made in a Git repository
+    maintainers:
+      - tarampampam <murmur at cats dot rulez>
+      - jetexe <aur at jetexe dot net>
+    license: MIT
+    private_key: '{{ .Env.AUR_SSH_PRIVATE }}'
+    git_url: ssh://aur@aur.archlinux.org/describe-commit.git
+    depends: [git]
+    makedepends:
+      - go
+    prepare: |-
+      go mod download
+    build: |-
+      go generate -skip readme ./...
+
+      CGO_ENABLED=0 go build \
+        -trimpath \
+        -ldflags "-s -w -X gh.tarampamp.am/describe-commit/internal/version.version=${pkgver}" \
+        -o ./describe-commit \
+        ./cmd/describe-commit/
+    package: install -Dm755 "./{{ .ProjectName }}" "$pkgdir/usr/bin/{{ .ProjectName }}"
+    commit_author:
+      name: '{{ .Env.AUR_GIT_USERNAME }}'
+      email: '{{ .Env.AUR_GIT_EMAIL }}'
