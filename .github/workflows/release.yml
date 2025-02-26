@@ -97,7 +97,7 @@ jobs:
           release: any-version
           owner: ${{ vars.CLOUDSMITH_OWNER }}
           repo: ${{ vars.CLOUDSMITH_REPO }}
-          republish: 'true'
+          #republish: 'true'
           file: ${{ matrix.file }}
 
   build-docker-image:
