@@ -128,15 +128,21 @@ $EDITOR /etc/apk/repositories # remove the line with the repository
 
 ### 📦 AUR (Arch Linux)
 
+There are three packages available in the AUR:
+
+- Build from source: [describe-commit](https://aur.archlinux.org/packages/describe-commit)
+- Precompiled: [describe-commit-bin](https://aur.archlinux.org/packages/describe-commit-bin)
+- Unstable: [describe-commit-git](https://aur.archlinux.org/packages/describe-commit-git)
+
 ```shell
-# TODO(@jetexe): Add instructions for the AUR package
+pamac build describe-commit
 ```
 
 <details>
   <summary>Uninstalling</summary>
 
 ```shell
-# TODO(@jetexe): Add instructions for the AUR package
+pacman -Rs describe-commit
 ```
 
 </details>
