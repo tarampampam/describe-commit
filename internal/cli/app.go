@@ -110,6 +110,18 @@ func NewApp(name string) *App { //nolint:funlen
 			EnvVars: []string{"OPENAI_MODEL_NAME"},
 			Default: app.opt.Providers.OpenAI.ModelName,
 		}
+		openRouterApiKey = cmd.Flag[string]{
+			Names:   []string{"openrouter-api-key", "ora"},
+			Usage:   "OpenRouter API key (https://bit.ly/4hU1yY1)",
+			EnvVars: []string{"OPENROUTER_API_KEY"},
+			Default: app.opt.Providers.OpenRouter.ApiKey,
+		}
+		openRouterModelName = cmd.Flag[string]{
+			Names:   []string{"openrouter-model-name", "orm"},
+			Usage:   "OpenRouter model name (https://bit.ly/4ktktuG)",
+			EnvVars: []string{"OPENROUTER_MODEL_NAME"},
+			Default: app.opt.Providers.OpenRouter.ModelName,
+		}
 	)
 
 	app.cmd.Flags = []cmd.Flagger{
@@ -123,6 +135,8 @@ func NewApp(name string) *App { //nolint:funlen
 		&geminiModelName,
 		&openAIApiKey,
 		&openAIModelName,
+		&openRouterApiKey,
+		&openRouterModelName,
 	}
 
 	app.cmd.Action = func(ctx context.Context, c *cmd.Command, args []string) error {
@@ -147,6 +161,8 @@ func NewApp(name string) *App { //nolint:funlen
 			setIfFlagIsSet(&app.opt.Providers.Gemini.ModelName, geminiModelName)
 			setIfFlagIsSet(&app.opt.Providers.OpenAI.ApiKey, openAIApiKey)
 			setIfFlagIsSet(&app.opt.Providers.OpenAI.ModelName, openAIModelName)
+			setIfFlagIsSet(&app.opt.Providers.OpenRouter.ApiKey, openRouterApiKey)
+			setIfFlagIsSet(&app.opt.Providers.OpenRouter.ModelName, openRouterModelName)
 		}
 
 		if err := app.opt.Validate(); err != nil {
@@ -230,6 +246,11 @@ func (a *App) run(ctx context.Context, workingDir string) error { //nolint:funle
 		provider = ai.NewOpenAI(
 			a.opt.Providers.OpenAI.ApiKey,
 			a.opt.Providers.OpenAI.ModelName,
+		)
+	case ai.ProviderOpenRouter:
+		provider = ai.NewOpenRouter(
+			a.opt.Providers.OpenRouter.ApiKey,
+			a.opt.Providers.OpenRouter.ModelName,
 		)
 	default:
 		return fmt.Errorf("unsupported AI provider: %s", a.opt.AIProviderName)

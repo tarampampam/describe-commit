@@ -26,7 +26,7 @@ enableEmoji: false
 maxOutputTokens: 500
 
 # AI provider to use
-# @enum {gemini|openai}
+# @enum {gemini|openai|openrouter}
 aiProvider: gemini
 
 # Gemini provider configuration
@@ -48,3 +48,13 @@ openai:
   # OpenAI model name (https://bit.ly/4hXCXkL)
   # @type {string}
   #modelName: <openai-model-name>
+
+# OpenRouter provider configuration
+openrouter:
+  # OpenRouter API key (issue your own at https://bit.ly/4hU1yY1)
+  # @type {string}
+  apiKey: <openrouter-api-key>
+
+  # OpenAI model name (https://bit.ly/4ktktuG)
+  # @type {string}
+  #modelName: <openrouter-model-name>
