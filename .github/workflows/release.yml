@@ -75,15 +75,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {format: alpine, distro: alpine, file: describe-commit-linux-amd64.apk}
-          - {format: alpine, distro: alpine, file: describe-commit-linux-arm64.apk}
-          - {format: alpine, distro: alpine, file: describe-commit-linux-arm.apk}
-          - {format: deb, distro: any-distro, file: describe-commit-linux-amd64.deb}
-          - {format: deb, distro: any-distro, file: describe-commit-linux-arm64.deb}
-          - {format: deb, distro: any-distro, file: describe-commit-linux-arm.deb}
-          - {format: rpm, distro: any-distro, file: describe-commit-linux-amd64.rpm}
-          - {format: rpm, distro: any-distro, file: describe-commit-linux-arm64.rpm}
-          - {format: rpm, distro: any-distro, file: describe-commit-linux-arm.rpm}
+          - {format: alpine, distro: alpine, file: describe-commit-linux-amd64.apk, republish: 'false'}
+          - {format: alpine, distro: alpine, file: describe-commit-linux-arm64.apk, republish: 'false'}
+          - {format: alpine, distro: alpine, file: describe-commit-linux-arm.apk, republish: 'false'}
+          - {format: deb, distro: any-distro, file: describe-commit-linux-amd64.deb, republish: 'false'}
+          - {format: deb, distro: any-distro, file: describe-commit-linux-arm64.deb, republish: 'false'}
+          - {format: deb, distro: any-distro, file: describe-commit-linux-arm.deb, republish: 'false'}
+          - {format: rpm, distro: any-distro, file: describe-commit-linux-amd64.rpm, republish: 'true'}
+          - {format: rpm, distro: any-distro, file: describe-commit-linux-arm64.rpm, republish: 'true'}
+          - {format: rpm, distro: any-distro, file: describe-commit-linux-arm.rpm, republish: 'true'}
     steps:
       - uses: actions/download-artifact@v4
         with: {name: packages}
@@ -97,7 +97,7 @@ jobs:
           release: any-version
           owner: ${{ vars.CLOUDSMITH_OWNER }}
           repo: ${{ vars.CLOUDSMITH_REPO }}
-          #republish: 'true'
+          republish: ${{ matrix.republish }}
           file: ${{ matrix.file }}
 
   build-docker-image:
