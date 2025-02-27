@@ -70,23 +70,28 @@ jobs:
   upload-packages:
     name: Upload the packages
     runs-on: ubuntu-latest
-    needs: [build-app]
+    needs: [values, build-app]
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {format: alpine, distro: alpine, file: describe-commit-linux-amd64.apk, republish: 'false'}
-          - {format: alpine, distro: alpine, file: describe-commit-linux-arm64.apk, republish: 'false'}
-          - {format: alpine, distro: alpine, file: describe-commit-linux-arm.apk, republish: 'false'}
-          - {format: deb, distro: any-distro, file: describe-commit-linux-amd64.deb, republish: 'false'}
-          - {format: deb, distro: any-distro, file: describe-commit-linux-arm64.deb, republish: 'false'}
-          - {format: deb, distro: any-distro, file: describe-commit-linux-arm.deb, republish: 'false'}
-          - {format: rpm, distro: any-distro, file: describe-commit-linux-amd64.rpm, republish: 'true'}
-          - {format: rpm, distro: any-distro, file: describe-commit-linux-arm64.rpm, republish: 'true'}
-          - {format: rpm, distro: any-distro, file: describe-commit-linux-arm.rpm, republish: 'true'}
+          - {format: alpine, distro: alpine, file: describe-commit-linux-amd64.apk}
+          - {format: alpine, distro: alpine, file: describe-commit-linux-arm64.apk}
+          - {format: alpine, distro: alpine, file: describe-commit-linux-arm.apk}
+          - {format: deb, distro: any-distro, file: describe-commit-linux-amd64.deb}
+          - {format: deb, distro: any-distro, file: describe-commit-linux-arm64.deb}
+          - {format: deb, distro: any-distro, file: describe-commit-linux-arm.deb}
+          - {format: rpm, distro: any-distro, file: describe-commit-linux-amd64.rpm}
+          - {format: rpm, distro: any-distro, file: describe-commit-linux-arm64.rpm}
+          - {format: rpm, distro: any-distro, file: describe-commit-linux-arm.rpm}
     steps:
-      - uses: actions/download-artifact@v4
-        with: {name: packages}
+      - {uses: actions/download-artifact@v4, with: {name: packages}}
+      - id: new-file-name
+        run: |
+          filename='${{ matrix.file }}'
+          suffix='${{ needs.values.outputs.version }}'
+          echo "out=${filename%.*}-${suffix}.${filename##*.}" > "$GITHUB_OUTPUT"
+      - run: mv ${{ matrix.file }} ${{ steps.new-file-name.outputs.out }} # to avoid collision
       - uses: cloudsmith-io/action@v0.6.14
         with:
           skip-install-cli: 'true'
@@ -97,8 +102,8 @@ jobs:
           release: any-version
           owner: ${{ vars.CLOUDSMITH_OWNER }}
           repo: ${{ vars.CLOUDSMITH_REPO }}
-          republish: ${{ matrix.republish }}
-          file: ${{ matrix.file }}
+          republish: 'true'
+          file: ${{ steps.new-file-name.outputs.out }}
 
   build-docker-image:
     name: Build the docker image
