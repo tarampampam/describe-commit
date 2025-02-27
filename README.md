@@ -14,6 +14,7 @@ Currently, it supports the following AI providers:
 
 - [OpenAI ChatGPT](https://openai.com/chatgpt/overview/)
 - [Google Gemini](https://deepmind.google/technologies/gemini/)
+- [OpenRouter](https://openrouter.ai/)
 
 It also allows users to select the desired model for content generating.
 
@@ -358,11 +359,13 @@ Options:
    --commit-history-length="…", --cl="…", --hl="…"  Number of previous commits from the Git history (0 = disabled) (default: 20) [$COMMIT_HISTORY_LENGTH]
    --enable-emoji, -e                               Enable emoji in the commit message [$ENABLE_EMOJI]
    --max-output-tokens="…"                          Maximum number of tokens in the output message (default: 500) [$MAX_OUTPUT_TOKENS]
-   --ai-provider="…", --ai="…"                      AI provider name (gemini|openai) (default: gemini) [$AI_PROVIDER]
+   --ai-provider="…", --ai="…"                      AI provider name (gemini|openai|openrouter) (default: gemini) [$AI_PROVIDER]
    --gemini-api-key="…", --ga="…"                   Gemini API key (https://bit.ly/4jZhiKI, as of February 2025 it's free) [$GEMINI_API_KEY]
    --gemini-model-name="…", --gm="…"                Gemini model name (https://bit.ly/4i02ARR) (default: gemini-2.0-flash) [$GEMINI_MODEL_NAME]
    --openai-api-key="…", --oa="…"                   OpenAI API key (https://bit.ly/4i03NbR, you need to add funds to your account) [$OPENAI_API_KEY]
    --openai-model-name="…", --om="…"                OpenAI model name (https://bit.ly/4hXCXkL) (default: gpt-4o-mini) [$OPENAI_MODEL_NAME]
+   --openrouter-api-key="…", --ora="…"              OpenRouter API key (https://bit.ly/4hU1yY1) [$OPENROUTER_API_KEY]
+   --openrouter-model-name="…", --orm="…"           OpenRouter model name (https://bit.ly/4ktktuG) (default: nvidia/llama-3.1-nemotron-70b-instruct:free) [$OPENROUTER_MODEL_NAME]
    --help, -h                                       Show help
    --version, -v                                    Print the version
 ```

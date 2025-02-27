@@ -28,13 +28,14 @@ type httpClient interface {
 
 // Do not forget to update the [SupportedProviders] function if you add or remove providers.
 const (
-	ProviderGemini = "gemini"
-	ProviderOpenAI = "openai"
+	ProviderGemini     = "gemini"
+	ProviderOpenAI     = "openai"
+	ProviderOpenRouter = "openrouter"
 )
 
 // SupportedProviders returns a list of supported AI providers.
 func SupportedProviders() []string {
-	return []string{ProviderGemini, ProviderOpenAI}
+	return []string{ProviderGemini, ProviderOpenAI, ProviderOpenRouter}
 }
 
 // IsProviderSupported checks if the given provider is supported.

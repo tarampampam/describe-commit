@@ -34,7 +34,10 @@ gemini:
   modelName: <gemini-model-name>
 openai:
   apiKey: <openai-api-key>
-  modelName: <openai-model-name>`,
+  modelName: <openai-model-name>
+openrouter:
+  apiKey: <openrouter-api-key>
+  modelName: <openrouter-model-name>`,
 			wantStruct: func() (c config.Config) {
 				c.ShortMessageOnly = toPtr(true)
 				c.CommitHistoryLength = toPtr[int64](312312)
@@ -48,6 +51,10 @@ openai:
 				c.OpenAI = &config.OpenAI{
 					ApiKey:    toPtr("<openai-api-key>"),
 					ModelName: toPtr("<openai-model-name>"),
+				}
+				c.OpenRouter = &config.OpenRouter{
+					ApiKey:    toPtr("<openrouter-api-key>"),
+					ModelName: toPtr("<openrouter-model-name>"),
 				}
 
 				return

@@ -13,13 +13,14 @@ type (
 	// Config is used to unmarshal the configuration file content.
 	Config struct {
 		// pointers are used to distinguish between unset and set values (nil = unset)
-		ShortMessageOnly    *bool   `yaml:"shortMessageOnly"`
-		CommitHistoryLength *int64  `yaml:"commitHistoryLength"`
-		EnableEmoji         *bool   `yaml:"enableEmoji"`
-		AIProviderName      *string `yaml:"aiProvider"`
-		MaxOutputTokens     *int64  `yaml:"maxOutputTokens"`
-		Gemini              *Gemini `yaml:"gemini"`
-		OpenAI              *OpenAI `yaml:"openai"`
+		ShortMessageOnly    *bool       `yaml:"shortMessageOnly"`
+		CommitHistoryLength *int64      `yaml:"commitHistoryLength"`
+		EnableEmoji         *bool       `yaml:"enableEmoji"`
+		AIProviderName      *string     `yaml:"aiProvider"`
+		MaxOutputTokens     *int64      `yaml:"maxOutputTokens"`
+		Gemini              *Gemini     `yaml:"gemini"`
+		OpenAI              *OpenAI     `yaml:"openai"`
+		OpenRouter          *OpenRouter `yaml:"openrouter"`
 	}
 
 	Gemini struct {
@@ -28,6 +29,11 @@ type (
 	}
 
 	OpenAI struct {
+		ApiKey    *string `yaml:"apiKey"`
+		ModelName *string `yaml:"modelName"`
+	}
+
+	OpenRouter struct {
 		ApiKey    *string `yaml:"apiKey"`
 		ModelName *string `yaml:"modelName"`
 	}

@@ -57,7 +57,11 @@ func NewGemini(apiKey, model string, opt ...GeminiOption) *Gemini {
 	return &p
 }
 
-func (p *Gemini) Query(ctx context.Context, changes, commits string, opts ...Option) (*Response, error) { //nolint:dupl
+func (p *Gemini) Query( //nolint:dupl
+	ctx context.Context,
+	changes, commits string,
+	opts ...Option,
+) (*Response, error) {
 	var (
 		opt          = options{}.Apply(opts...)
 		instructions = GeneratePrompt(opts...)
@@ -109,6 +113,13 @@ func (p *Gemini) newRequest( //nolint:funlen
 	o options,
 ) (*http.Request, error) {
 	type (
+		generationConfig struct { // https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
+			Temperature     float64 `json:"temperature"`
+			MaxOutputTokens int64   `json:"maxOutputTokens"`
+			TopP            float64 `json:"topP"`
+			CandidateCount  int     `json:"candidateCount"`
+		}
+
 		safetySetting struct {
 			Category  string `json:"category"`
 			Threshold string `json:"threshold"`
@@ -123,13 +134,8 @@ func (p *Gemini) newRequest( //nolint:funlen
 		}
 	)
 
-	var data struct {
-		GenerationConfig struct { // https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
-			Temperature     float64 `json:"temperature"`
-			MaxOutputTokens int64   `json:"maxOutputTokens"`
-			TopP            float64 `json:"topP"`
-			CandidateCount  int     `json:"candidateCount"`
-		} `json:"generationConfig"`
+	var data = struct {
+		GenerationConfig  generationConfig `json:"generationConfig"`
 		SystemInstruction struct {
 			Parts struct {
 				Text string `json:"text"`
@@ -138,26 +144,26 @@ func (p *Gemini) newRequest( //nolint:funlen
 		// https://ai.google.dev/api/generate-content#v1beta.SafetySetting
 		SafetySettings []safetySetting `json:"safetySettings"`
 		Contents       []content       `json:"contents"`
+	}{
+		GenerationConfig: generationConfig{
+			Temperature:     0.1, //nolint:mnd
+			MaxOutputTokens: o.MaxOutputTokens,
+			TopP:            0.1, //nolint:mnd
+			CandidateCount:  1,
+		},
+		SafetySettings: []safetySetting{
+			{Category: "HARM_CATEGORY_DANGEROUS_CONTENT", Threshold: "BLOCK_LOW_AND_ABOVE"},
+			{Category: "HARM_CATEGORY_HARASSMENT", Threshold: "BLOCK_LOW_AND_ABOVE"},
+			{Category: "HARM_CATEGORY_HATE_SPEECH", Threshold: "BLOCK_LOW_AND_ABOVE"},
+			{Category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", Threshold: "BLOCK_LOW_AND_ABOVE"},
+		},
+		Contents: []content{{Parts: []contentPart{
+			{Text: wrapChanges(changes)},
+			{Text: wrapCommits(commits)},
+		}}},
 	}
-
-	data.GenerationConfig.Temperature = 0.1
-	data.GenerationConfig.MaxOutputTokens = o.MaxOutputTokens
-	data.GenerationConfig.TopP = 0.1
-	data.GenerationConfig.CandidateCount = 1
 
 	data.SystemInstruction.Parts.Text = instructions
-
-	data.SafetySettings = []safetySetting{
-		{Category: "HARM_CATEGORY_DANGEROUS_CONTENT", Threshold: "BLOCK_LOW_AND_ABOVE"},
-		{Category: "HARM_CATEGORY_HARASSMENT", Threshold: "BLOCK_LOW_AND_ABOVE"},
-		{Category: "HARM_CATEGORY_HATE_SPEECH", Threshold: "BLOCK_LOW_AND_ABOVE"},
-		{Category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", Threshold: "BLOCK_LOW_AND_ABOVE"},
-	}
-
-	data.Contents = []content{{Parts: []contentPart{
-		{Text: wrapChanges(changes)},
-		{Text: wrapCommits(commits)},
-	}}}
 
 	j, jErr := json.Marshal(data)
 	if jErr != nil {

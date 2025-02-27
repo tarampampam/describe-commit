@@ -19,8 +19,9 @@ type options struct {
 	AIProviderName      string
 
 	Providers struct {
-		Gemini struct{ ApiKey, ModelName string }
-		OpenAI struct{ ApiKey, ModelName string }
+		Gemini     struct{ ApiKey, ModelName string }
+		OpenAI     struct{ ApiKey, ModelName string }
+		OpenRouter struct{ ApiKey, ModelName string }
 	}
 }
 
@@ -33,6 +34,7 @@ func newOptionsWithDefaults() options {
 
 	opt.Providers.Gemini.ModelName = "gemini-2.0-flash"
 	opt.Providers.OpenAI.ModelName = "gpt-4o-mini"
+	opt.Providers.OpenRouter.ModelName = "nvidia/llama-3.1-nemotron-70b-instruct:free"
 
 	return opt
 }
@@ -78,6 +80,11 @@ func (o *options) UpdateFromConfigFile(filePath []string) error {
 		setIfSourceNotNil(&o.Providers.OpenAI.ModelName, sub.ModelName)
 	}
 
+	if sub := cfg.OpenRouter; sub != nil {
+		setIfSourceNotNil(&o.Providers.OpenRouter.ApiKey, sub.ApiKey)
+		setIfSourceNotNil(&o.Providers.OpenRouter.ModelName, sub.ModelName)
+	}
+
 	return nil
 }
 
@@ -116,6 +123,16 @@ func (o *options) Validate() error {
 
 		if o.Providers.OpenAI.ModelName == "" {
 			return errors.New("OpenAI model name is required")
+		}
+	}
+
+	if o.AIProviderName == ai.ProviderOpenRouter {
+		if o.Providers.OpenRouter.ApiKey == "" {
+			return errors.New("OpenRouter API key is required")
+		}
+
+		if o.Providers.OpenRouter.ModelName == "" {
+			return errors.New("OpenRouter model name is required")
 		}
 	}
 
