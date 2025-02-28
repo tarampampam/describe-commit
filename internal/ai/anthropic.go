@@ -12,17 +12,16 @@ import (
 )
 
 type AnthropicAPIResponse struct {
-	Content    		[]AnthropicContent 	`json:"content"`
+	Content []AnthropicContent `json:"content"`
 }
 
 type AnthropicContent struct {
-	Type   string  `json:"type"`
-	Text   string  `json:"text,omitempty"`
+	Type string `json:"type"`
+	Text string `json:"text,omitempty"`
 }
 
-
 type Anthropic struct {
-	httpClient        httpClient
+	httpClient                          httpClient
 	apiKey, modelName, anthropicVersion string
 }
 
@@ -51,9 +50,9 @@ func NewAnthropic(apiKey, model string, version string, opt ...AnthropicOption) 
 	}
 
 	var p = Anthropic{
-		httpClient: opts.HttpClient,
-		apiKey:     apiKey,
-		modelName:  model,
+		httpClient:       opts.HttpClient,
+		apiKey:           apiKey,
+		modelName:        model,
 		anthropicVersion: version,
 	}
 
@@ -128,20 +127,20 @@ func (p *Anthropic) newRequest(
 
 	// https://docs.anthropic.com/en/api/messages
 	j, jErr := json.Marshal(struct {
-		Model               string    `json:"model"`
-		Messages            []message `json:"messages"`
-		Stream				bool	  `json:"stream"`
-		Temperature         float64   `json:"temperature"`
-		TopP                float64   `json:"top_p"`
-		MaxTokens 			int64     `json:"max_tokens"`
-		System				string	  `json:"system"`
+		Model       string    `json:"model"`
+		Messages    []message `json:"messages"`
+		Stream      bool      `json:"stream"`
+		Temperature float64   `json:"temperature"`
+		TopP        float64   `json:"top_p"`
+		MaxTokens   int64     `json:"max_tokens"`
+		System      string    `json:"system"`
 	}{
-		Model:               p.modelName,
-		Stream:              false,
-		System:				 instructions,
-		Temperature:         0.1, //nolint:mnd
-		TopP:                0.1, //nolint:mnd
-		MaxTokens: 			 o.MaxOutputTokens,
+		Model:       p.modelName,
+		Stream:      false,
+		System:      instructions,
+		Temperature: 0.1, //nolint:mnd
+		TopP:        0.1, //nolint:mnd
+		MaxTokens:   o.MaxOutputTokens,
 		Messages: []message{
 			{Role: "user", Content: wrapChanges(changes)},
 			{Role: "user", Content: wrapCommits(commits)},

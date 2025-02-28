@@ -33,11 +33,11 @@ func newOptionsWithDefaults() options {
 		AIProviderName:      ai.ProviderGemini, // due to its free
 	}
 
-	opt.Providers.Gemini.ModelName 		= "gemini-2.0-flash"
-	opt.Providers.OpenAI.ModelName 		= "gpt-4o-mini"
-	opt.Providers.OpenRouter.ModelName 	= "nvidia/llama-3.1-nemotron-70b-instruct:free"
-	opt.Providers.Anthropic.ModelName 	= "claude-3-7-sonnet-20250219"
-	opt.Providers.Anthropic.Version 	= "2023-06-01"
+	opt.Providers.Gemini.ModelName = "gemini-2.0-flash"
+	opt.Providers.OpenAI.ModelName = "gpt-4o-mini"
+	opt.Providers.OpenRouter.ModelName = "nvidia/llama-3.1-nemotron-70b-instruct:free"
+	opt.Providers.Anthropic.ModelName = "claude-3-7-sonnet-20250219"
+	opt.Providers.Anthropic.Version = "2023-06-01"
 
 	return opt
 }
