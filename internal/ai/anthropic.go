@@ -11,21 +11,13 @@ import (
 	"time"
 )
 
-type AnthropicAPIResponse struct {
-	Content []AnthropicContent `json:"content"`
-}
-
-type AnthropicContent struct {
-	Type string `json:"type"`
-	Text string `json:"text,omitempty"`
-}
-
+// Anthropic is a provider for the Anthropic API.
 type Anthropic struct {
-	httpClient                          httpClient
-	apiKey, modelName, anthropicVersion string
+	httpClient        httpClient
+	apiKey, modelName string
 }
 
-var _ Provider = (*Anthropic)(nil)
+var _ Provider = (*Anthropic)(nil) // ensure the interface is implemented
 
 type (
 	AnthropicOptions struct {
@@ -42,7 +34,7 @@ func WithAnthropicHttpClient(c httpClient) AnthropicOption {
 }
 
 // NewAnthropic creates a new Anthropic provider.
-func NewAnthropic(apiKey, model string, version string, opt ...AnthropicOption) *Anthropic {
+func NewAnthropic(apiKey, model string, opt ...AnthropicOption) *Anthropic {
 	var opts AnthropicOptions
 
 	for _, o := range opt {
@@ -50,10 +42,9 @@ func NewAnthropic(apiKey, model string, version string, opt ...AnthropicOption) 
 	}
 
 	var p = Anthropic{
-		httpClient:       opts.HttpClient,
-		apiKey:           apiKey,
-		modelName:        model,
-		anthropicVersion: version,
+		httpClient: opts.HttpClient,
+		apiKey:     apiKey,
+		modelName:  model,
 	}
 
 	if p.httpClient == nil { // set default HTTP client
@@ -150,7 +141,6 @@ func (p *Anthropic) newRequest(
 		return nil, jErr
 	}
 
-	// https://ai.google.dev/gemini-api/docs/text-generation?lang=rest
 	req, rErr := http.NewRequestWithContext(ctx,
 		http.MethodPost,
 		"https://api.anthropic.com/v1/messages",
@@ -162,7 +152,7 @@ func (p *Anthropic) newRequest(
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-api-key", p.apiKey)
-	req.Header.Set("anthropic-version", p.anthropicVersion)
+	req.Header.Set("anthropic-version", "2023-06-01") // https://docs.anthropic.com/en/api/versioning
 
 	return req, nil
 }
@@ -190,7 +180,13 @@ func (p *Anthropic) responseToError(resp *http.Response) error {
 
 // parseResponse parses the response from the Anthropic API.
 func (p *Anthropic) parseResponse(resp *http.Response) (string, error) {
-	var answer AnthropicAPIResponse
+	var answer struct {
+		Content []struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		} `json:"content"`
+	}
+
 	if dErr := json.NewDecoder(resp.Body).Decode(&answer); dErr != nil {
 		return "", dErr
 	}

@@ -26,7 +26,7 @@ enableEmoji: false
 maxOutputTokens: 500
 
 # AI provider to use
-# @enum {gemini|openai|openrouter}
+# @enum {gemini|openai|openrouter|anthropic}
 aiProvider: gemini
 
 # Gemini provider configuration
@@ -60,15 +60,11 @@ openrouter:
   #modelName: <openrouter-model-name>
 
 # Anthropic provider configuration
-anhtropic:
-  # Anthropic API key
+anthropic:
+  # Anthropic API key (issue your own at https://bit.ly/4klw0Mw, you need to add funds to your account)
   # @type {string}
-  apiKey: <anhtropic-api-key>
+  apiKey: <anthropic-api-key>
 
-  # Anthropic model name
+  # Anthropic model name (https://bit.ly/4bmQDDV)
   # @type {string}
   #modelName: <anthropic-model-name>
-
-  # Anthropic version
-  # @type {string}
-  #version: <anthropic-version>

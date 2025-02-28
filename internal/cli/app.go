@@ -124,21 +124,15 @@ func NewApp(name string) *App { //nolint:funlen
 		}
 		anthropicApiKey = cmd.Flag[string]{
 			Names:   []string{"anthropic-api-key", "ana"},
-			Usage:   "Anthropic API key (https://bit.ly/4hU1yY1)",
+			Usage:   "Anthropic API key (https://bit.ly/4klw0Mw)",
 			EnvVars: []string{"ANTHROPIC_API_KEY"},
 			Default: app.opt.Providers.Anthropic.ApiKey,
 		}
 		anthropicModelName = cmd.Flag[string]{
 			Names:   []string{"anthropic-model-name", "anm"},
-			Usage:   "Anthropic model name (https://bit.ly/4ktktuG)",
+			Usage:   "Anthropic model name (https://bit.ly/4bmQDDV)",
 			EnvVars: []string{"ANTHROPIC_MODEL_NAME"},
 			Default: app.opt.Providers.Anthropic.ModelName,
-		}
-		anthropicVersion = cmd.Flag[string]{
-			Names:   []string{"anthropic-version", "anv"},
-			Usage:   "Anthropic version",
-			EnvVars: []string{"ANTHROPIC_VERSION"},
-			Default: app.opt.Providers.Anthropic.Version,
 		}
 	)
 
@@ -157,7 +151,6 @@ func NewApp(name string) *App { //nolint:funlen
 		&openRouterModelName,
 		&anthropicApiKey,
 		&anthropicModelName,
-		&anthropicVersion,
 	}
 
 	app.cmd.Action = func(ctx context.Context, c *cmd.Command, args []string) error {
@@ -279,7 +272,6 @@ func (a *App) run(ctx context.Context, workingDir string) error { //nolint:funle
 		provider = ai.NewAnthropic(
 			a.opt.Providers.Anthropic.ApiKey,
 			a.opt.Providers.Anthropic.ModelName,
-			a.opt.Providers.Anthropic.Version,
 		)
 	default:
 		return fmt.Errorf("unsupported AI provider: %s", a.opt.AIProviderName)

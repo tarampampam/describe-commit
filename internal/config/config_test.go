@@ -37,7 +37,10 @@ openai:
   modelName: <openai-model-name>
 openrouter:
   apiKey: <openrouter-api-key>
-  modelName: <openrouter-model-name>`,
+  modelName: <openrouter-model-name>
+anthropic:
+  apiKey: <anthropic-api-key>
+  modelName: <anthropic-model-name>`,
 			wantStruct: func() (c config.Config) {
 				c.ShortMessageOnly = toPtr(true)
 				c.CommitHistoryLength = toPtr[int64](312312)
@@ -55,6 +58,10 @@ openrouter:
 				c.OpenRouter = &config.OpenRouter{
 					ApiKey:    toPtr("<openrouter-api-key>"),
 					ModelName: toPtr("<openrouter-model-name>"),
+				}
+				c.Anthropic = &config.Anthropic{
+					ApiKey:    toPtr("<anthropic-api-key>"),
+					ModelName: toPtr("<anthropic-model-name>"),
 				}
 
 				return

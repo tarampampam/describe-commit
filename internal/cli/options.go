@@ -22,7 +22,7 @@ type options struct {
 		Gemini     struct{ ApiKey, ModelName string }
 		OpenAI     struct{ ApiKey, ModelName string }
 		OpenRouter struct{ ApiKey, ModelName string }
-		Anthropic  struct{ ApiKey, ModelName, Version string }
+		Anthropic  struct{ ApiKey, ModelName string }
 	}
 }
 
@@ -37,7 +37,6 @@ func newOptionsWithDefaults() options {
 	opt.Providers.OpenAI.ModelName = "gpt-4o-mini"
 	opt.Providers.OpenRouter.ModelName = "nvidia/llama-3.1-nemotron-70b-instruct:free"
 	opt.Providers.Anthropic.ModelName = "claude-3-7-sonnet-20250219"
-	opt.Providers.Anthropic.Version = "2023-06-01"
 
 	return opt
 }
@@ -86,6 +85,11 @@ func (o *options) UpdateFromConfigFile(filePath []string) error {
 	if sub := cfg.OpenRouter; sub != nil {
 		setIfSourceNotNil(&o.Providers.OpenRouter.ApiKey, sub.ApiKey)
 		setIfSourceNotNil(&o.Providers.OpenRouter.ModelName, sub.ModelName)
+	}
+
+	if sub := cfg.Anthropic; sub != nil {
+		setIfSourceNotNil(&o.Providers.Anthropic.ApiKey, sub.ApiKey)
+		setIfSourceNotNil(&o.Providers.Anthropic.ModelName, sub.ModelName)
 	}
 
 	return nil

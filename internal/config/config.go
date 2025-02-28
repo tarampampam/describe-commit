@@ -42,7 +42,6 @@ type (
 	Anthropic struct {
 		ApiKey    *string `yaml:"apiKey"`
 		ModelName *string `yaml:"modelName"`
-		Version   *string `yaml:"version"`
 	}
 )
 
