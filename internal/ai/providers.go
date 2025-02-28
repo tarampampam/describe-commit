@@ -31,11 +31,12 @@ const (
 	ProviderGemini     = "gemini"
 	ProviderOpenAI     = "openai"
 	ProviderOpenRouter = "openrouter"
+	ProviderAnthropic  = "anthropic"
 )
 
 // SupportedProviders returns a list of supported AI providers.
 func SupportedProviders() []string {
-	return []string{ProviderGemini, ProviderOpenAI, ProviderOpenRouter}
+	return []string{ProviderGemini, ProviderOpenAI, ProviderOpenRouter, ProviderAnthropic}
 }
 
 // IsProviderSupported checks if the given provider is supported.

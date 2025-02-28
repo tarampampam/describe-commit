@@ -122,6 +122,24 @@ func NewApp(name string) *App { //nolint:funlen
 			EnvVars: []string{"OPENROUTER_MODEL_NAME"},
 			Default: app.opt.Providers.OpenRouter.ModelName,
 		}
+		anthropicApiKey = cmd.Flag[string]{
+			Names:   []string{"anthropic-api-key", "ana"},
+			Usage:   "Anthropic API key (https://bit.ly/4hU1yY1)",
+			EnvVars: []string{"ANTHROPIC_API_KEY"},
+			Default: app.opt.Providers.Anthropic.ApiKey,
+		}
+		anthropicModelName = cmd.Flag[string]{
+			Names:   []string{"anthropic-model-name", "anm"},
+			Usage:   "Anthropic model name (https://bit.ly/4ktktuG)",
+			EnvVars: []string{"ANTHROPIC_MODEL_NAME"},
+			Default: app.opt.Providers.Anthropic.ModelName,
+		}
+		anthropicVersion = cmd.Flag[string]{
+			Names:   []string{"anthropic-version", "anv"},
+			Usage:   "Anthropic version",
+			EnvVars: []string{"ANTHROPIC_VERSION"},
+			Default: app.opt.Providers.Anthropic.Version,
+		}
 	)
 
 	app.cmd.Flags = []cmd.Flagger{
@@ -137,6 +155,9 @@ func NewApp(name string) *App { //nolint:funlen
 		&openAIModelName,
 		&openRouterApiKey,
 		&openRouterModelName,
+		&anthropicApiKey,
+		&anthropicModelName,
+		&anthropicVersion,
 	}
 
 	app.cmd.Action = func(ctx context.Context, c *cmd.Command, args []string) error {
@@ -163,6 +184,8 @@ func NewApp(name string) *App { //nolint:funlen
 			setIfFlagIsSet(&app.opt.Providers.OpenAI.ModelName, openAIModelName)
 			setIfFlagIsSet(&app.opt.Providers.OpenRouter.ApiKey, openRouterApiKey)
 			setIfFlagIsSet(&app.opt.Providers.OpenRouter.ModelName, openRouterModelName)
+			setIfFlagIsSet(&app.opt.Providers.Anthropic.ApiKey, anthropicApiKey)
+			setIfFlagIsSet(&app.opt.Providers.Anthropic.ModelName, anthropicModelName)
 		}
 
 		if err := app.opt.Validate(); err != nil {
@@ -251,6 +274,12 @@ func (a *App) run(ctx context.Context, workingDir string) error { //nolint:funle
 		provider = ai.NewOpenRouter(
 			a.opt.Providers.OpenRouter.ApiKey,
 			a.opt.Providers.OpenRouter.ModelName,
+		)
+	case ai.ProviderAnthropic:
+		provider = ai.NewAnthropic(
+			a.opt.Providers.Anthropic.ApiKey,
+			a.opt.Providers.Anthropic.ModelName,
+			a.opt.Providers.Anthropic.Version,
 		)
 	default:
 		return fmt.Errorf("unsupported AI provider: %s", a.opt.AIProviderName)
