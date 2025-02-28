@@ -58,3 +58,17 @@ openrouter:
   # OpenAI model name (https://bit.ly/4ktktuG)
   # @type {string}
   #modelName: <openrouter-model-name>
+
+# Anthropic provider configuration
+anhtropic:
+  # Anthropic API key
+  # @type {string}
+  apiKey: <anhtropic-api-key>
+
+  # Anthropic model name
+  # @type {string}
+  #modelName: <anthropic-model-name>
+
+  # Anthropic version
+  # @type {string}
+  #version: <anthropic-version>
