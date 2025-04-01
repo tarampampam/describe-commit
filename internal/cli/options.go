@@ -145,11 +145,11 @@ func (o *options) Validate() error {
 
 	if o.AIProviderName == ai.ProviderAnthropic {
 		if o.Providers.Anthropic.ApiKey == "" {
-			return errors.New("Anthropic API key is required")
+			return errors.New("Anthropic API key is required") //nolint:staticcheck
 		}
 
 		if o.Providers.Anthropic.ModelName == "" {
-			return errors.New("Anthropic model name is required")
+			return errors.New("Anthropic model name is required") //nolint:staticcheck
 		}
 	}
 
