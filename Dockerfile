@@ -21,7 +21,7 @@ RUN set -x \
     && ./describe-commit --help
 
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
-FROM docker.io/library/alpine:3.22 AS runtime
+FROM docker.io/library/alpine:3.23 AS runtime
 
 ARG APP_VERSION="undefined@docker"
 
