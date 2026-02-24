@@ -46,14 +46,10 @@ func GeneratePrompt(opts ...Option) string { //nolint:funlen
 	{ // input
 		b.WriteString("## Input\n")
 		b.WriteString("You will receive:\n")
-		b.WriteString(fmt.Sprintf(
-			"1. The output of `git diff`, showing the staged changes, is wrapped between `%s` and `%s`.\n",
-			gitDiffBegin, gitDiffEnd,
-		))
-		b.WriteString(fmt.Sprintf(
-			"2. The output of `git log`, presenting recent commit history, is wrapped between `%s` and `%s`.\n",
-			gitLogBegin, gitLogEnd,
-		))
+		_, _ = fmt.Fprintf(&b, "1. The output of `git diff`, showing the staged changes, is wrapped between `%s` and `%s`.\n",
+			gitDiffBegin, gitDiffEnd)
+		_, _ = fmt.Fprintf(&b, "2. The output of `git log`, presenting recent commit history, is wrapped between `%s` and `%s`.\n",
+			gitLogBegin, gitLogEnd)
 		b.WriteRune('\n')
 	}
 
