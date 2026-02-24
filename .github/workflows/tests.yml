@@ -58,7 +58,7 @@ jobs:
           CGO_ENABLED: 0
           LDFLAGS: -s -w -X gh.tarampamp.am/describe-commit/internal/version.version=${{ steps.values.outputs.app-version }}
         run: go build -trimpath -ldflags "$LDFLAGS" -o "./${{ steps.values.outputs.bin-name }}" ./cmd/describe-commit/
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: describe-commit-${{ matrix.os }}-${{ matrix.arch }}
           path: ./${{ steps.values.outputs.bin-name }}
