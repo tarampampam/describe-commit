@@ -217,7 +217,7 @@ available options.
 You can specify the configuration file's location using the `--config-file` option. By default, however, the
 tool searches for the file in the user's configuration directory:
 
-- **Linux**: `~/.configs/describe-commit.yml`
+- **Linux**: `~/.config/describe-commit.yml`
 - **Windows**: `%APPDATA%\describe-commit.yml`
 - **macOS**: `~/Library/Application Support/describe-commit.yml`
 
@@ -229,7 +229,7 @@ Configuration options are applied in the following order, from highest to lowest
 2. Environment variables (e.g., `GEMINI_API_KEY`, `OPENAI_MODEL_NAME`, etc.)
 3. A configuration file in the working directory or any parent directory, up to the root (the file can be
    named `.describe-commit.yml` or `describe-commit.yml`)
-4. A configuration file in the user's configuration directory (e.g., `~/.configs/describe-commit.yml` for Linux)
+4. A configuration file in the user's configuration directory (e.g., `~/.config/describe-commit.yml` for Linux)
 
 This means you can store API tokens and other default settings in the global user's configuration file and override
 them with command-line options or a configuration file in the working directory when needed (e.g., enabling emojis
