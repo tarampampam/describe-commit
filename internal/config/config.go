@@ -25,22 +25,22 @@ type (
 	}
 
 	Gemini struct {
-		ApiKey    *string `yaml:"apiKey"` //nolint:gosec
+		ApiKey    *string `yaml:"apiKey"`
 		ModelName *string `yaml:"modelName"`
 	}
 
 	OpenAI struct {
-		ApiKey    *string `yaml:"apiKey"` //nolint:gosec
+		ApiKey    *string `yaml:"apiKey"`
 		ModelName *string `yaml:"modelName"`
 	}
 
 	OpenRouter struct {
-		ApiKey    *string `yaml:"apiKey"` //nolint:gosec
+		ApiKey    *string `yaml:"apiKey"`
 		ModelName *string `yaml:"modelName"`
 	}
 
 	Anthropic struct {
-		ApiKey    *string `yaml:"apiKey"` //nolint:gosec
+		ApiKey    *string `yaml:"apiKey"`
 		ModelName *string `yaml:"modelName"`
 	}
 )

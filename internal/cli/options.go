@@ -19,10 +19,10 @@ type options struct {
 	AIProviderName      string
 
 	Providers struct {
-		Gemini     struct{ ApiKey, ModelName string } //nolint:gosec
-		OpenAI     struct{ ApiKey, ModelName string } //nolint:gosec
-		OpenRouter struct{ ApiKey, ModelName string } //nolint:gosec
-		Anthropic  struct{ ApiKey, ModelName string } //nolint:gosec
+		Gemini     struct{ ApiKey, ModelName string }
+		OpenAI     struct{ ApiKey, ModelName string }
+		OpenRouter struct{ ApiKey, ModelName string }
+		Anthropic  struct{ ApiKey, ModelName string }
 	}
 }
 
