@@ -38,10 +38,14 @@ func newOptionsWithDefaults() options {
 		AIProviderName:      ai.ProviderGemini, // due to its free
 	}
 
-	opt.Providers.Gemini.ModelName = "gemini-2.0-flash"
-	opt.Providers.OpenAI.ModelName = "gpt-4o-mini"
-	opt.Providers.OpenRouter.ModelName = "nvidia/llama-3.1-nemotron-70b-instruct:free"
-	opt.Providers.Anthropic.ModelName = "claude-3-7-sonnet-20250219"
+	// https://ai.google.dev/gemini-api/docs/models
+	opt.Providers.Gemini.ModelName = "gemini-2.5-flash"
+	// https://developers.openai.com/api/docs/models
+	opt.Providers.OpenAI.ModelName = "gpt-4.1-nano"
+	// https://openrouter.ai/api/v1/models
+	opt.Providers.OpenRouter.ModelName = "google/gemma-4-31b-it:free"
+	// https://platform.claude.com/docs/en/about-claude/models/overview
+	opt.Providers.Anthropic.ModelName = "claude-haiku-4-5-20251001"
 
 	return opt
 }
