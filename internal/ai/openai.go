@@ -159,23 +159,33 @@ func (p *OpenAI) newRequest(
 
 // responseToError converts the response from the OpenAI API to an error.
 func (p *OpenAI) responseToError(resp *http.Response) error {
-	var response struct {
+	// https://platform.openai.com/docs/guides/error-codes
+	var body struct {
 		Error struct {
 			Message string `json:"message"`
 		} `json:"error"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&response); err == nil && response.Error.Message != "" {
-		return fmt.Errorf(
-			"OpenAI API error: %s (status code: %d)",
-			response.Error.Message, resp.StatusCode,
-		)
+	retryable := resp.StatusCode == http.StatusTooManyRequests || // 429 - rate limit
+		resp.StatusCode == http.StatusInternalServerError || // 500
+		resp.StatusCode == http.StatusBadGateway || // 502
+		resp.StatusCode == http.StatusServiceUnavailable || // 503
+		resp.StatusCode == http.StatusGatewayTimeout // 504
+
+	var err error
+
+	if dErr := json.NewDecoder(resp.Body).Decode(&body); dErr == nil && body.Error.Message != "" {
+		err = fmt.Errorf("OpenAI API error: %s (status code: %d)", body.Error.Message, resp.StatusCode)
+	} else {
+		err = fmt.Errorf("unexpected OpenAI API response status code: %d (%s)",
+			resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
-	return fmt.Errorf(
-		"unexpected OpenAI API response status code: %d (%s)",
-		resp.StatusCode, http.StatusText(resp.StatusCode),
-	)
+	if retryable {
+		return newRetryableError(err)
+	}
+
+	return err
 }
 
 // parseResponse parses the response from the OpenAI API.

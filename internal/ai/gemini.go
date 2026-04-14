@@ -189,23 +189,40 @@ func (p *Gemini) newRequest( //nolint:funlen
 
 // responseToError converts the response from the Gemini API to an error.
 func (p *Gemini) responseToError(resp *http.Response) error {
-	var response struct {
+	// https://ai.google.dev/gemini-api/docs/troubleshooting
+	// https://cloud.google.com/apis/design/errors (gRPC status codes mapped to HTTP)
+	var body struct {
 		Error struct {
 			Message string `json:"message"`
+			Status  string `json:"status"` // gRPC status name, e.g. "RESOURCE_EXHAUSTED"
 		} `json:"error"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&response); err == nil && response.Error.Message != "" {
-		return fmt.Errorf(
-			"gemini API error: %s (status code: %d)",
-			response.Error.Message, resp.StatusCode,
-		)
+	retryable := resp.StatusCode == http.StatusTooManyRequests || // 429 - quota exceeded (RESOURCE_EXHAUSTED)
+		resp.StatusCode == http.StatusInternalServerError || // 500
+		resp.StatusCode == http.StatusBadGateway || // 502
+		resp.StatusCode == http.StatusServiceUnavailable || // 503 - transient (UNAVAILABLE)
+		resp.StatusCode == http.StatusGatewayTimeout // 504
+
+	var err error
+
+	if dErr := json.NewDecoder(resp.Body).Decode(&body); dErr == nil && body.Error.Message != "" {
+		err = fmt.Errorf("Gemini API error: %s (status code: %d)", body.Error.Message, resp.StatusCode)
+
+		// guard against edge cases where the gRPC status arrives with an unexpected HTTP code
+		if body.Error.Status == "RESOURCE_EXHAUSTED" || body.Error.Status == "UNAVAILABLE" {
+			retryable = true
+		}
+	} else {
+		err = fmt.Errorf("unexpected Gemini API response status code: %d (%s)",
+			resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
-	return fmt.Errorf(
-		"unexpected Gemini API response status code: %d (%s)",
-		resp.StatusCode, http.StatusText(resp.StatusCode),
-	)
+	if retryable {
+		return newRetryableError(err)
+	}
+
+	return err
 }
 
 // parseResponse parses the response from the Gemini API.

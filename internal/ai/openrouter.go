@@ -157,23 +157,34 @@ func (p *OpenRouter) newRequest(
 
 // responseToError converts the response from the OpenRouter API to an error.
 func (p *OpenRouter) responseToError(resp *http.Response) error {
-	var response struct {
+	// https://openrouter.ai/docs/api-reference/errors
+	var body struct {
 		Error struct {
 			Message string `json:"message"`
 		} `json:"error"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&response); err == nil && response.Error.Message != "" {
-		return fmt.Errorf(
-			"OpenRouter API error: %s (status code: %d)",
-			response.Error.Message, resp.StatusCode,
-		)
+	retryable := resp.StatusCode == http.StatusTooManyRequests || // 429 - rate limit
+		resp.StatusCode == http.StatusRequestTimeout || // 408 - upstream provider timed out
+		resp.StatusCode == http.StatusInternalServerError || // 500
+		resp.StatusCode == http.StatusBadGateway || // 502
+		resp.StatusCode == http.StatusServiceUnavailable || // 503
+		resp.StatusCode == http.StatusGatewayTimeout // 504
+
+	var err error
+
+	if dErr := json.NewDecoder(resp.Body).Decode(&body); dErr == nil && body.Error.Message != "" {
+		err = fmt.Errorf("OpenRouter API error: %s (status code: %d)", body.Error.Message, resp.StatusCode)
+	} else {
+		err = fmt.Errorf("unexpected OpenRouter API response status code: %d (%s)",
+			resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
-	return fmt.Errorf(
-		"unexpected OpenRouter API response status code: %d (%s)",
-		resp.StatusCode, http.StatusText(resp.StatusCode),
-	)
+	if retryable {
+		return newRetryableError(err)
+	}
+
+	return err
 }
 
 // parseResponse parses the response from the OpenRouter API.
