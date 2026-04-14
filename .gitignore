@@ -9,6 +9,9 @@ describe-commit.yml
 /app
 /describe-commit
 
+## AI shit
+/.claude
+
 ## Temp dirs & trash
 /temp
 /tmp
