@@ -360,6 +360,8 @@ Options:
    --commit-history-length="…", --cl="…", --hl="…"  Number of previous commits from the Git history (0 = disabled) (default: 20) [$COMMIT_HISTORY_LENGTH]
    --enable-emoji, -e                               Enable emoji in the commit message [$ENABLE_EMOJI]
    --max-output-tokens="…"                          Maximum number of tokens in the output message (default: 500) [$MAX_OUTPUT_TOKENS]
+   --retry-attempts="…"                             Maximum number of retry attempts on retryable API errors (0 = unlimited retries) (default: 5) [$RETRY_ATTEMPTS]
+   --retry-delay="…"                                Delay between retry attempts (e.g. 1s, 500ms) (default: 1s) [$RETRY_DELAY]
    --ai-provider="…", --ai="…"                      AI provider name (gemini|openai|openrouter|anthropic) (default: gemini) [$AI_PROVIDER]
    --gemini-api-key="…", --ga="…"                   Gemini API key (https://bit.ly/4jZhiKI, as of February 2025 it's free) [$GEMINI_API_KEY]
    --gemini-model-name="…", --gm="…"                Gemini model name (https://bit.ly/4i02ARR) (default: gemini-2.0-flash) [$GEMINI_MODEL_NAME]

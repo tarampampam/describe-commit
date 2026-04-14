@@ -18,6 +18,8 @@ type (
 		EnableEmoji         *bool       `yaml:"enableEmoji"`
 		AIProviderName      *string     `yaml:"aiProvider"`
 		MaxOutputTokens     *int64      `yaml:"maxOutputTokens"`
+		MaxRetries          *uint       `yaml:"maxRetries"`
+		RetryDelay          *string     `yaml:"retryDelay"`
 		Gemini              *Gemini     `yaml:"gemini"`
 		OpenAI              *OpenAI     `yaml:"openai"`
 		OpenRouter          *OpenRouter `yaml:"openrouter"`

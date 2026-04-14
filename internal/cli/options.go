@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"gh.tarampamp.am/describe-commit/internal/ai"
 	"gh.tarampamp.am/describe-commit/internal/config"
@@ -16,6 +17,8 @@ type options struct {
 	CommitHistoryLength int64
 	EnableEmoji         bool
 	MaxOutputTokens     int64
+	MaxRetries          uint
+	RetryDelay          time.Duration
 	AIProviderName      string
 
 	Providers struct {
@@ -28,8 +31,10 @@ type options struct {
 
 func newOptionsWithDefaults() options {
 	var opt = options{
-		CommitHistoryLength: 20,                //nolint:mnd
-		MaxOutputTokens:     500,               //nolint:mnd
+		CommitHistoryLength: 20,  //nolint:mnd
+		MaxOutputTokens:     500, //nolint:mnd
+		MaxRetries:          5,   //nolint:mnd
+		RetryDelay:          time.Second,
 		AIProviderName:      ai.ProviderGemini, // due to its free
 	}
 
@@ -70,7 +75,17 @@ func (o *options) UpdateFromConfigFile(filePath []string) error {
 	setIfSourceNotNil(&o.CommitHistoryLength, cfg.CommitHistoryLength)
 	setIfSourceNotNil(&o.EnableEmoji, cfg.EnableEmoji)
 	setIfSourceNotNil(&o.MaxOutputTokens, cfg.MaxOutputTokens)
+	setIfSourceNotNil(&o.MaxRetries, cfg.MaxRetries)
 	setIfSourceNotNil(&o.AIProviderName, cfg.AIProviderName)
+
+	if d := cfg.RetryDelay; d != nil && *d != "" {
+		dur, parseErr := time.ParseDuration(*d)
+		if parseErr != nil {
+			return fmt.Errorf("invalid retryDelay value %q: %w", *d, parseErr)
+		}
+
+		o.RetryDelay = dur
+	}
 
 	if sub := cfg.Gemini; sub != nil {
 		setIfSourceNotNil(&o.Providers.Gemini.ApiKey, sub.ApiKey)

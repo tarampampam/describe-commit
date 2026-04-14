@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gh.tarampamp.am/describe-commit/internal/ai"
 	"gh.tarampamp.am/describe-commit/internal/cli/cmd"
@@ -14,6 +15,7 @@ import (
 	"gh.tarampamp.am/describe-commit/internal/debug"
 	"gh.tarampamp.am/describe-commit/internal/errgroup"
 	"gh.tarampamp.am/describe-commit/internal/git"
+	"gh.tarampamp.am/describe-commit/internal/retry"
 	"gh.tarampamp.am/describe-commit/internal/version"
 )
 
@@ -72,6 +74,18 @@ func NewApp(name string) *App { //nolint:funlen
 				return nil
 			},
 			Default: app.opt.MaxOutputTokens,
+		}
+		retryAttempts = cmd.Flag[uint]{
+			Names:   []string{"retry-attempts"},
+			Usage:   "Maximum number of retry attempts on retryable API errors (0 = unlimited retries)",
+			EnvVars: []string{"RETRY_ATTEMPTS"},
+			Default: app.opt.MaxRetries,
+		}
+		retryDelay = cmd.Flag[time.Duration]{
+			Names:   []string{"retry-delay"},
+			Usage:   "Delay between retry attempts (e.g. 1s, 500ms)",
+			EnvVars: []string{"RETRY_DELAY"},
+			Default: app.opt.RetryDelay,
 		}
 		aiProviderName = cmd.Flag[string]{
 			Names:   []string{"ai-provider", "ai"},
@@ -142,6 +156,8 @@ func NewApp(name string) *App { //nolint:funlen
 		&commitHistoryLength,
 		&enableEmoji,
 		&maxOutputTokens,
+		&retryAttempts,
+		&retryDelay,
 		&aiProviderName,
 		&geminiApiKey,
 		&geminiModelName,
@@ -170,6 +186,8 @@ func NewApp(name string) *App { //nolint:funlen
 			setIfFlagIsSet(&app.opt.CommitHistoryLength, commitHistoryLength)
 			setIfFlagIsSet(&app.opt.EnableEmoji, enableEmoji)
 			setIfFlagIsSet(&app.opt.MaxOutputTokens, maxOutputTokens)
+			setIfFlagIsSet(&app.opt.MaxRetries, retryAttempts)
+			setIfFlagIsSet(&app.opt.RetryDelay, retryDelay)
 			setIfFlagIsSet(&app.opt.AIProviderName, aiProviderName)
 			setIfFlagIsSet(&app.opt.Providers.Gemini.ApiKey, geminiApiKey)
 			setIfFlagIsSet(&app.opt.Providers.Gemini.ModelName, geminiModelName)
@@ -311,16 +329,36 @@ func (a *App) run(ctx context.Context, workingDir string) error { //nolint:funle
 		return fmt.Errorf("no changes found in %s (probably nothing staged; try `git add -A`)", workingDir)
 	}
 
-	response, respErr := provider.Query(
-		ctx,
-		changes,
-		commits,
-		ai.WithShortMessageOnly(a.opt.ShortMessageOnly),
-		ai.WithEmoji(a.opt.EnableEmoji),
-		ai.WithMaxOutputTokens(a.opt.MaxOutputTokens),
-	)
-	if respErr != nil {
-		return respErr
+	var response *ai.Response
+
+	if retryErr := retry.Do(ctx, func(ctx context.Context, attempt uint) (bool, error) {
+		if attempt > 0 {
+			debug.Printf("retrying after error (attempt %d of %d)", attempt, a.opt.MaxRetries)
+		}
+
+		var queryErr error
+
+		response, queryErr = provider.Query(ctx, changes, commits,
+			ai.WithShortMessageOnly(a.opt.ShortMessageOnly),
+			ai.WithEmoji(a.opt.EnableEmoji),
+			ai.WithMaxOutputTokens(a.opt.MaxOutputTokens),
+		)
+		if queryErr == nil {
+			return false, nil
+		}
+
+		return !ai.IsRetryableError(queryErr), queryErr
+	},
+		retry.WithMaxAttempts(func() uint {
+			if a.opt.MaxRetries == 0 {
+				return 0 // unlimited
+			}
+
+			return a.opt.MaxRetries + 1
+		}()),
+		retry.WithDelay(a.opt.RetryDelay),
+	); retryErr != nil {
+		return retryErr
 	}
 
 	debug.Printf("prompt:\n%s", response.Prompt)
