@@ -102,49 +102,49 @@ func NewApp(name string) *App { //nolint:funlen
 		}
 		geminiApiKey = cmd.Flag[string]{
 			Names:   []string{"gemini-api-key", "ga"},
-			Usage:   "Gemini API key (https://bit.ly/4jZhiKI, as of February 2025 it's free)",
+			Usage:   "Gemini API key (https://aistudio.google.com/app/api-keys, as of February 2025 it's free)",
 			EnvVars: []string{"GEMINI_API_KEY"},
 			Default: app.opt.Providers.Gemini.ApiKey,
 		}
 		geminiModelName = cmd.Flag[string]{
 			Names:   []string{"gemini-model-name", "gm"},
-			Usage:   "Gemini model name (https://bit.ly/4i02ARR)",
+			Usage:   "Gemini model name (https://ai.google.dev/gemini-api/docs/models)",
 			EnvVars: []string{"GEMINI_MODEL_NAME"},
 			Default: app.opt.Providers.Gemini.ModelName,
 		}
 		openAIApiKey = cmd.Flag[string]{
 			Names:   []string{"openai-api-key", "oa"},
-			Usage:   "OpenAI API key (https://bit.ly/4i03NbR, you need to add funds to your account)",
+			Usage:   "OpenAI API key (https://platform.openai.com/api-keys, you need to add funds to your account)",
 			EnvVars: []string{"OPENAI_API_KEY"},
 			Default: app.opt.Providers.OpenAI.ApiKey,
 		}
 		openAIModelName = cmd.Flag[string]{
 			Names:   []string{"openai-model-name", "om"},
-			Usage:   "OpenAI model name (https://bit.ly/4hXCXkL)",
+			Usage:   "OpenAI model name (https://developers.openai.com/api/docs/models)",
 			EnvVars: []string{"OPENAI_MODEL_NAME"},
 			Default: app.opt.Providers.OpenAI.ModelName,
 		}
 		openRouterApiKey = cmd.Flag[string]{
 			Names:   []string{"openrouter-api-key", "ora"},
-			Usage:   "OpenRouter API key (https://bit.ly/4hU1yY1)",
+			Usage:   "OpenRouter API key (https://openrouter.ai/workspaces/default/keys)",
 			EnvVars: []string{"OPENROUTER_API_KEY"},
 			Default: app.opt.Providers.OpenRouter.ApiKey,
 		}
 		openRouterModelName = cmd.Flag[string]{
 			Names:   []string{"openrouter-model-name", "orm"},
-			Usage:   "OpenRouter model name (https://bit.ly/4ktktuG)",
+			Usage:   "OpenRouter model name (https://openrouter.ai/models)",
 			EnvVars: []string{"OPENROUTER_MODEL_NAME"},
 			Default: app.opt.Providers.OpenRouter.ModelName,
 		}
 		anthropicApiKey = cmd.Flag[string]{
 			Names:   []string{"anthropic-api-key", "ana"},
-			Usage:   "Anthropic API key (https://bit.ly/4klw0Mw)",
+			Usage:   "Anthropic API key (https://platform.claude.com/settings/keys)",
 			EnvVars: []string{"ANTHROPIC_API_KEY"},
 			Default: app.opt.Providers.Anthropic.ApiKey,
 		}
 		anthropicModelName = cmd.Flag[string]{
 			Names:   []string{"anthropic-model-name", "anm"},
-			Usage:   "Anthropic model name (https://bit.ly/4bmQDDV)",
+			Usage:   "Anthropic model name (https://platform.claude.com/docs/en/about-claude/models/overview)",
 			EnvVars: []string{"ANTHROPIC_MODEL_NAME"},
 			Default: app.opt.Providers.Anthropic.ModelName,
 		}

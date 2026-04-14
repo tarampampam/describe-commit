@@ -363,14 +363,14 @@ Options:
    --retry-attempts="…"                             Maximum number of retry attempts on retryable API errors (0 = unlimited retries) (default: 5) [$RETRY_ATTEMPTS]
    --retry-delay="…"                                Delay between retry attempts (e.g. 1s, 500ms) (default: 1s) [$RETRY_DELAY]
    --ai-provider="…", --ai="…"                      AI provider name (gemini|openai|openrouter|anthropic) (default: gemini) [$AI_PROVIDER]
-   --gemini-api-key="…", --ga="…"                   Gemini API key (https://bit.ly/4jZhiKI, as of February 2025 it's free) [$GEMINI_API_KEY]
-   --gemini-model-name="…", --gm="…"                Gemini model name (https://bit.ly/4i02ARR) (default: gemini-2.0-flash) [$GEMINI_MODEL_NAME]
-   --openai-api-key="…", --oa="…"                   OpenAI API key (https://bit.ly/4i03NbR, you need to add funds to your account) [$OPENAI_API_KEY]
-   --openai-model-name="…", --om="…"                OpenAI model name (https://bit.ly/4hXCXkL) (default: gpt-4o-mini) [$OPENAI_MODEL_NAME]
-   --openrouter-api-key="…", --ora="…"              OpenRouter API key (https://bit.ly/4hU1yY1) [$OPENROUTER_API_KEY]
-   --openrouter-model-name="…", --orm="…"           OpenRouter model name (https://bit.ly/4ktktuG) (default: nvidia/llama-3.1-nemotron-70b-instruct:free) [$OPENROUTER_MODEL_NAME]
-   --anthropic-api-key="…", --ana="…"               Anthropic API key (https://bit.ly/4klw0Mw) [$ANTHROPIC_API_KEY]
-   --anthropic-model-name="…", --anm="…"            Anthropic model name (https://bit.ly/4bmQDDV) (default: claude-3-7-sonnet-20250219) [$ANTHROPIC_MODEL_NAME]
+   --gemini-api-key="…", --ga="…"                   Gemini API key (https://aistudio.google.com/app/api-keys, as of February 2025 it's free) [$GEMINI_API_KEY]
+   --gemini-model-name="…", --gm="…"                Gemini model name (https://ai.google.dev/gemini-api/docs/models) (default: gemini-2.5-flash) [$GEMINI_MODEL_NAME]
+   --openai-api-key="…", --oa="…"                   OpenAI API key (https://platform.openai.com/api-keys, you need to add funds to your account) [$OPENAI_API_KEY]
+   --openai-model-name="…", --om="…"                OpenAI model name (https://developers.openai.com/api/docs/models) (default: gpt-4.1-nano) [$OPENAI_MODEL_NAME]
+   --openrouter-api-key="…", --ora="…"              OpenRouter API key (https://openrouter.ai/workspaces/default/keys) [$OPENROUTER_API_KEY]
+   --openrouter-model-name="…", --orm="…"           OpenRouter model name (https://openrouter.ai/models) (default: google/gemma-4-31b-it:free) [$OPENROUTER_MODEL_NAME]
+   --anthropic-api-key="…", --ana="…"               Anthropic API key (https://platform.claude.com/settings/keys) [$ANTHROPIC_API_KEY]
+   --anthropic-model-name="…", --anm="…"            Anthropic model name (https://platform.claude.com/docs/en/about-claude/models/overview) (default: claude-haiku-4-5-20251001) [$ANTHROPIC_MODEL_NAME]
    --help, -h                                       Show help
    --version, -v                                    Print the version
 ```

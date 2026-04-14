@@ -31,40 +31,41 @@ aiProvider: gemini
 
 # Gemini provider configuration
 gemini:
-  # Gemini API key (issue your own at https://bit.ly/4jZhiKI, as of February 2025 it's free)
+  # Gemini API key (issue your own at https://aistudio.google.com/app/api-keys, as of February 2025 it's free)
   # @type {string}
   apiKey: <gemini-api-key>
 
-  # Gemini model name (https://bit.ly/4i02ARR)
+  # Gemini model name (https://ai.google.dev/gemini-api/docs/models)
   # @type {string}
   #modelName: <gemini-model-name>
 
 # OpenAI provider configuration
 openai:
-  # OpenAI API key (issue your own at https://bit.ly/4i03NbR, you need to add funds to your account to access the API)
+  # OpenAI API key (issue your own at https://platform.openai.com/api-keys, you need to add funds to your account to
+  # access the API)
   # @type {string}
   apiKey: <openai-api-key>
 
-  # OpenAI model name (https://bit.ly/4hXCXkL)
+  # OpenAI model name (https://developers.openai.com/api/docs/models)
   # @type {string}
   #modelName: <openai-model-name>
 
 # OpenRouter provider configuration
 openrouter:
-  # OpenRouter API key (issue your own at https://bit.ly/4hU1yY1)
+  # OpenRouter API key (issue your own at https://openrouter.ai/workspaces/default/keys)
   # @type {string}
   apiKey: <openrouter-api-key>
 
-  # OpenAI model name (https://bit.ly/4ktktuG)
+  # OpenAI model name (https://openrouter.ai/models?order=pricing-low-to-high)
   # @type {string}
   #modelName: <openrouter-model-name>
 
 # Anthropic provider configuration
 anthropic:
-  # Anthropic API key (issue your own at https://bit.ly/4klw0Mw, you need to add funds to your account)
+  # Anthropic API key (issue your own at https://platform.claude.com/settings/keys, you need to add funds to your account)
   # @type {string}
   apiKey: <anthropic-api-key>
 
-  # Anthropic model name (https://bit.ly/4bmQDDV)
+  # Anthropic model name (https://platform.claude.com/docs/en/about-claude/models/overview)
   # @type {string}
   #modelName: <anthropic-model-name>
