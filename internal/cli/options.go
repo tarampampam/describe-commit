@@ -22,10 +22,10 @@ type options struct {
 	AIProviderName      string
 
 	Providers struct {
-		Gemini     struct{ ApiKey, ModelName string }
-		OpenAI     struct{ ApiKey, ModelName string }
-		OpenRouter struct{ ApiKey, ModelName string }
-		Anthropic  struct{ ApiKey, ModelName string }
+		Gemini     struct{ ApiKey, ModelName, BaseURL string }
+		OpenAI     struct{ ApiKey, ModelName, BaseURL string }
+		OpenRouter struct{ ApiKey, ModelName, BaseURL string }
+		Anthropic  struct{ ApiKey, ModelName, BaseURL string }
 	}
 }
 
@@ -94,21 +94,25 @@ func (o *options) UpdateFromConfigFile(filePath []string) error {
 	if sub := cfg.Gemini; sub != nil {
 		setIfSourceNotNil(&o.Providers.Gemini.ApiKey, sub.ApiKey)
 		setIfSourceNotNil(&o.Providers.Gemini.ModelName, sub.ModelName)
+		setIfSourceNotNil(&o.Providers.Gemini.BaseURL, sub.BaseURL)
 	}
 
 	if sub := cfg.OpenAI; sub != nil {
 		setIfSourceNotNil(&o.Providers.OpenAI.ApiKey, sub.ApiKey)
 		setIfSourceNotNil(&o.Providers.OpenAI.ModelName, sub.ModelName)
+		setIfSourceNotNil(&o.Providers.OpenAI.BaseURL, sub.BaseURL)
 	}
 
 	if sub := cfg.OpenRouter; sub != nil {
 		setIfSourceNotNil(&o.Providers.OpenRouter.ApiKey, sub.ApiKey)
 		setIfSourceNotNil(&o.Providers.OpenRouter.ModelName, sub.ModelName)
+		setIfSourceNotNil(&o.Providers.OpenRouter.BaseURL, sub.BaseURL)
 	}
 
 	if sub := cfg.Anthropic; sub != nil {
 		setIfSourceNotNil(&o.Providers.Anthropic.ApiKey, sub.ApiKey)
 		setIfSourceNotNil(&o.Providers.Anthropic.ModelName, sub.ModelName)
+		setIfSourceNotNil(&o.Providers.Anthropic.BaseURL, sub.BaseURL)
 	}
 
 	return nil

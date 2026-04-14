@@ -32,15 +32,19 @@ aiProvider: foobar
 gemini:
   apiKey: <your-api-key>
   modelName: <gemini-model-name>
+  baseUrl: https://gemini.example.com
 openai:
   apiKey: <openai-api-key>
   modelName: <openai-model-name>
+  baseUrl: https://openai.example.com
 openrouter:
   apiKey: <openrouter-api-key>
   modelName: <openrouter-model-name>
+  baseUrl: https://openrouter.example.com
 anthropic:
   apiKey: <anthropic-api-key>
-  modelName: <anthropic-model-name>`,
+  modelName: <anthropic-model-name>
+  baseUrl: https://anthropic.example.com`,
 			wantStruct: func() (c config.Config) {
 				c.ShortMessageOnly = toPtr(true)
 				c.CommitHistoryLength = toPtr[int64](312312)
@@ -50,18 +54,22 @@ anthropic:
 				c.Gemini = &config.Gemini{
 					ApiKey:    toPtr("<your-api-key>"),
 					ModelName: toPtr("<gemini-model-name>"),
+					BaseURL:   toPtr("https://gemini.example.com"),
 				}
 				c.OpenAI = &config.OpenAI{
 					ApiKey:    toPtr("<openai-api-key>"),
 					ModelName: toPtr("<openai-model-name>"),
+					BaseURL:   toPtr("https://openai.example.com"),
 				}
 				c.OpenRouter = &config.OpenRouter{
 					ApiKey:    toPtr("<openrouter-api-key>"),
 					ModelName: toPtr("<openrouter-model-name>"),
+					BaseURL:   toPtr("https://openrouter.example.com"),
 				}
 				c.Anthropic = &config.Anthropic{
 					ApiKey:    toPtr("<anthropic-api-key>"),
 					ModelName: toPtr("<anthropic-model-name>"),
+					BaseURL:   toPtr("https://anthropic.example.com"),
 				}
 
 				return

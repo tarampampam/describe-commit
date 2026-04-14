@@ -11,10 +11,13 @@ import (
 	"time"
 )
 
+const anthropicDefaultBaseURL = "https://api.anthropic.com"
+
 // Anthropic is a provider for the Anthropic API.
 type Anthropic struct {
 	httpClient        httpClient
 	apiKey, modelName string
+	baseURL           string
 }
 
 var _ Provider = (*Anthropic)(nil) // ensure the interface is implemented
@@ -22,6 +25,7 @@ var _ Provider = (*Anthropic)(nil) // ensure the interface is implemented
 type (
 	AnthropicOptions struct {
 		HttpClient httpClient
+		BaseURL    string
 	}
 
 	// AnthropicOption allows to customize the Anthropic provider.
@@ -33,8 +37,14 @@ func WithAnthropicHttpClient(c httpClient) AnthropicOption {
 	return func(o *AnthropicOptions) { o.HttpClient = c }
 }
 
+// WithAnthropicBaseURL overrides the default Anthropic API base URL.
+// Use this to point the provider at an Anthropic-compatible endpoint or proxy.
+func WithAnthropicBaseURL(url string) AnthropicOption {
+	return func(o *AnthropicOptions) { o.BaseURL = url }
+}
+
 // NewAnthropic creates a new Anthropic provider.
-func NewAnthropic(apiKey, model string, opt ...AnthropicOption) *Anthropic {
+func NewAnthropic(apiKey, model string, opt ...AnthropicOption) *Anthropic { //nolint:dupl
 	var opts AnthropicOptions
 
 	for _, o := range opt {
@@ -54,10 +64,14 @@ func NewAnthropic(apiKey, model string, opt ...AnthropicOption) *Anthropic {
 		}
 	}
 
+	if opts.BaseURL != "" {
+		p.baseURL = strings.TrimRight(opts.BaseURL, "/")
+	}
+
 	return &p
 }
 
-func (p *Anthropic) Query( //nolint:dupl
+func (p *Anthropic) Query(
 	ctx context.Context,
 	changes, commits string,
 	opts ...Option,
@@ -141,9 +155,14 @@ func (p *Anthropic) newRequest(
 		return nil, jErr
 	}
 
+	base := anthropicDefaultBaseURL
+	if p.baseURL != "" {
+		base = p.baseURL
+	}
+
 	req, rErr := http.NewRequestWithContext(ctx,
 		http.MethodPost,
-		"https://api.anthropic.com/v1/messages",
+		base+"/v1/messages",
 		bytes.NewReader(j),
 	)
 	if rErr != nil {

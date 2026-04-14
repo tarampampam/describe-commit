@@ -37,6 +37,8 @@ Without any manual effort (there's no time to write commit messages, lazy develo
 - Can generate short commit messages (subject line only)
 - Optionally includes emojis (🐛✨📝🚀✅♻️⬆️🔧🌐💡) in commit messages
 - Takes the commit history into account for better context
+- Supports custom API base URLs - connect to self-hosted or OpenAI-compatible endpoints
+  (e.g., [Ollama](https://ollama.com/), [LM Studio](https://lmstudio.ai/))
 - Runs as a standalone binary (only installed `git` is required)
 - Available for **Linux**, **macOS**, **Windows**, and as a **Docker image**
 
@@ -327,6 +329,29 @@ describe-commit --ai gemini --gemini-api-key "your-gemini-api-key"
 </details>
 
 <details>
+  <summary><strong>☝ Use a local model via Ollama (or any OpenAI-compatible endpoint)</strong></summary>
+
+Any provider that speaks the OpenAI chat-completions API (Ollama, LM Studio, vLLM, etc.) can be used by pointing
+the `--openai-base-url` flag at the local server and selecting the `openai` provider:
+
+```shell
+describe-commit \
+  --ai openai \
+  --openai-base-url "http://localhost:11434" \
+  --openai-model-name "llama3.2" \
+  --openai-api-key "ollama"
+```
+
+> The `--openai-api-key` value is ignored by Ollama but is required by the flag parser, so any non-empty
+> string works.
+
+The same `--<provider>-base-url` option is available for all four providers (`gemini`, `openai`, `openrouter`,
+`anthropic`), or you can set it via the corresponding environment variable (`OPENAI_BASE_URL`, `GEMINI_BASE_URL`,
+etc.) or through the `baseUrl` field in the [configuration file](describe-commit.example.yml).
+
+</details>
+
+<details>
   <summary><strong>☝ Generate a short commit message (only the first line) with emojis</strong></summary>
 
 ```shell
@@ -365,12 +390,16 @@ Options:
    --ai-provider="…", --ai="…"                      AI provider name (gemini|openai|openrouter|anthropic) (default: gemini) [$AI_PROVIDER]
    --gemini-api-key="…", --ga="…"                   Gemini API key (https://aistudio.google.com/app/api-keys, as of February 2025 it's free) [$GEMINI_API_KEY]
    --gemini-model-name="…", --gm="…"                Gemini model name (https://ai.google.dev/gemini-api/docs/models) (default: gemini-2.5-flash) [$GEMINI_MODEL_NAME]
+   --gemini-base-url="…"                            Gemini API base URL (overrides the default endpoint) [$GEMINI_BASE_URL]
    --openai-api-key="…", --oa="…"                   OpenAI API key (https://platform.openai.com/api-keys, you need to add funds to your account) [$OPENAI_API_KEY]
    --openai-model-name="…", --om="…"                OpenAI model name (https://developers.openai.com/api/docs/models) (default: gpt-4.1-nano) [$OPENAI_MODEL_NAME]
+   --openai-base-url="…"                            OpenAI API base URL (use to connect to OpenAI-compatible endpoints, e.g. Ollama) [$OPENAI_BASE_URL]
    --openrouter-api-key="…", --ora="…"              OpenRouter API key (https://openrouter.ai/workspaces/default/keys) [$OPENROUTER_API_KEY]
    --openrouter-model-name="…", --orm="…"           OpenRouter model name (https://openrouter.ai/models) (default: google/gemma-4-31b-it:free) [$OPENROUTER_MODEL_NAME]
+   --openrouter-base-url="…"                        OpenRouter API base URL (overrides the default endpoint) [$OPENROUTER_BASE_URL]
    --anthropic-api-key="…", --ana="…"               Anthropic API key (https://platform.claude.com/settings/keys) [$ANTHROPIC_API_KEY]
    --anthropic-model-name="…", --anm="…"            Anthropic model name (https://platform.claude.com/docs/en/about-claude/models/overview) (default: claude-haiku-4-5-20251001) [$ANTHROPIC_MODEL_NAME]
+   --anthropic-base-url="…"                         Anthropic API base URL (overrides the default endpoint) [$ANTHROPIC_BASE_URL]
    --help, -h                                       Show help
    --version, -v                                    Print the version
 ```

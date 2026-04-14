@@ -11,10 +11,13 @@ import (
 	"time"
 )
 
+const geminiDefaultBaseURL = "https://generativelanguage.googleapis.com"
+
 // Gemini is a provider for the Gemini API.
 type Gemini struct {
 	httpClient        httpClient
 	apiKey, modelName string
+	baseURL           string
 }
 
 var _ Provider = (*Gemini)(nil) // ensure the interface is implemented
@@ -22,6 +25,7 @@ var _ Provider = (*Gemini)(nil) // ensure the interface is implemented
 type (
 	geminiOptions struct {
 		HttpClient httpClient
+		BaseURL    string
 	}
 
 	// GeminiOption allows to customize the Gemini provider.
@@ -33,8 +37,14 @@ func WithGeminiHttpClient(c httpClient) GeminiOption {
 	return func(o *geminiOptions) { o.HttpClient = c }
 }
 
+// WithGeminiBaseURL overrides the default Gemini API base URL.
+// Use this to point the provider at a Gemini-compatible endpoint or proxy.
+func WithGeminiBaseURL(url string) GeminiOption {
+	return func(o *geminiOptions) { o.BaseURL = url }
+}
+
 // NewGemini creates a new Gemini provider.
-func NewGemini(apiKey, model string, opt ...GeminiOption) *Gemini {
+func NewGemini(apiKey, model string, opt ...GeminiOption) *Gemini { //nolint:dupl
 	var opts geminiOptions
 
 	for _, o := range opt {
@@ -54,10 +64,14 @@ func NewGemini(apiKey, model string, opt ...GeminiOption) *Gemini {
 		}
 	}
 
+	if opts.BaseURL != "" {
+		p.baseURL = strings.TrimRight(opts.BaseURL, "/")
+	}
+
 	return &p
 }
 
-func (p *Gemini) Query( //nolint:dupl
+func (p *Gemini) Query(
 	ctx context.Context,
 	changes, commits string,
 	opts ...Option,
@@ -170,9 +184,14 @@ func (p *Gemini) newRequest( //nolint:funlen
 		return nil, jErr
 	}
 
+	base := geminiDefaultBaseURL
+	if p.baseURL != "" {
+		base = p.baseURL
+	}
+
 	// https://ai.google.dev/gemini-api/docs/text-generation?lang=rest
 	req, rErr := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf(
-		"https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent",
+		base+"/v1beta/models/%s:generateContent",
 		p.modelName,
 	), bytes.NewReader(j))
 	if rErr != nil {

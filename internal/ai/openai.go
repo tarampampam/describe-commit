@@ -11,9 +11,12 @@ import (
 	"time"
 )
 
+const openAIDefaultBaseURL = "https://api.openai.com"
+
 type OpenAI struct {
 	httpClient        httpClient
 	apiKey, modelName string
+	baseURL           string
 }
 
 var _ Provider = (*OpenAI)(nil)
@@ -21,6 +24,7 @@ var _ Provider = (*OpenAI)(nil)
 type (
 	openaiOptions struct {
 		HttpClient httpClient
+		BaseURL    string
 	}
 
 	// OpenAIOption allows to customize the OpenAI provider.
@@ -32,8 +36,14 @@ func WithOpenAIHttpClient(c httpClient) OpenAIOption {
 	return func(o *openaiOptions) { o.HttpClient = c }
 }
 
+// WithOpenAIBaseURL overrides the default OpenAI API base URL.
+// Use this to point the provider at an OpenAI-compatible endpoint, e.g. a local Ollama instance.
+func WithOpenAIBaseURL(url string) OpenAIOption {
+	return func(o *openaiOptions) { o.BaseURL = url }
+}
+
 // NewOpenAI creates a new OpenAI provider.
-func NewOpenAI(apiKey, model string, opt ...OpenAIOption) *OpenAI {
+func NewOpenAI(apiKey, model string, opt ...OpenAIOption) *OpenAI { //nolint:dupl
 	var opts openaiOptions
 
 	for _, o := range opt {
@@ -53,10 +63,14 @@ func NewOpenAI(apiKey, model string, opt ...OpenAIOption) *OpenAI {
 		}
 	}
 
+	if opts.BaseURL != "" {
+		p.baseURL = strings.TrimRight(opts.BaseURL, "/")
+	}
+
 	return &p
 }
 
-func (p *OpenAI) Query( //nolint:dupl
+func (p *OpenAI) Query(
 	ctx context.Context,
 	changes, commits string,
 	opts ...Option,
@@ -141,10 +155,14 @@ func (p *OpenAI) newRequest(
 		return nil, jErr
 	}
 
-	// https://ai.google.dev/gemini-api/docs/text-generation?lang=rest
+	base := openAIDefaultBaseURL
+	if p.baseURL != "" {
+		base = p.baseURL
+	}
+
 	req, rErr := http.NewRequestWithContext(ctx,
 		http.MethodPost,
-		"https://api.openai.com/v1/chat/completions",
+		base+"/v1/chat/completions",
 		bytes.NewReader(j),
 	)
 	if rErr != nil {

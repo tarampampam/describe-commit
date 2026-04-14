@@ -11,10 +11,13 @@ import (
 	"time"
 )
 
+const openRouterDefaultBaseURL = "https://openrouter.ai"
+
 // OpenRouter is a provider for the OpenRouter API.
 type OpenRouter struct {
 	httpClient        httpClient
 	apiKey, modelName string
+	baseURL           string
 }
 
 var _ Provider = (*OpenRouter)(nil) // ensure the interface is implemented
@@ -22,6 +25,7 @@ var _ Provider = (*OpenRouter)(nil) // ensure the interface is implemented
 type (
 	openRouterOptions struct {
 		HttpClient httpClient
+		BaseURL    string
 	}
 
 	// OpenRouterOption allows to customize the OpenRouter provider.
@@ -33,8 +37,14 @@ func WithOpenRouterHttpClient(c httpClient) OpenRouterOption {
 	return func(o *openRouterOptions) { o.HttpClient = c }
 }
 
+// WithOpenRouterBaseURL overrides the default OpenRouter API base URL.
+// Use this to point the provider at an OpenRouter-compatible endpoint or proxy.
+func WithOpenRouterBaseURL(url string) OpenRouterOption {
+	return func(o *openRouterOptions) { o.BaseURL = url }
+}
+
 // NewOpenRouter creates a new OpenRouter provider.
-func NewOpenRouter(apiKey, model string, opt ...OpenRouterOption) *OpenRouter {
+func NewOpenRouter(apiKey, model string, opt ...OpenRouterOption) *OpenRouter { //nolint:dupl
 	var opts openRouterOptions
 
 	for _, o := range opt {
@@ -54,10 +64,14 @@ func NewOpenRouter(apiKey, model string, opt ...OpenRouterOption) *OpenRouter {
 		}
 	}
 
+	if opts.BaseURL != "" {
+		p.baseURL = strings.TrimRight(opts.BaseURL, "/")
+	}
+
 	return &p
 }
 
-func (p *OpenRouter) Query( //nolint:dupl
+func (p *OpenRouter) Query(
 	ctx context.Context,
 	changes, commits string,
 	opts ...Option,
@@ -140,9 +154,14 @@ func (p *OpenRouter) newRequest(
 		return nil, jErr
 	}
 
+	base := openRouterDefaultBaseURL
+	if p.baseURL != "" {
+		base = p.baseURL
+	}
+
 	req, rErr := http.NewRequestWithContext(ctx,
 		http.MethodPost,
-		"https://openrouter.ai/api/v1/chat/completions",
+		base+"/api/v1/chat/completions",
 		bytes.NewReader(j),
 	)
 	if rErr != nil {

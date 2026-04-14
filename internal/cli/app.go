@@ -112,6 +112,12 @@ func NewApp(name string) *App { //nolint:funlen
 			EnvVars: []string{"GEMINI_MODEL_NAME"},
 			Default: app.opt.Providers.Gemini.ModelName,
 		}
+		geminiBaseURL = cmd.Flag[string]{
+			Names:   []string{"gemini-base-url"},
+			Usage:   "Gemini API base URL (overrides the default endpoint)",
+			EnvVars: []string{"GEMINI_BASE_URL"},
+			Default: app.opt.Providers.Gemini.BaseURL,
+		}
 		openAIApiKey = cmd.Flag[string]{
 			Names:   []string{"openai-api-key", "oa"},
 			Usage:   "OpenAI API key (https://platform.openai.com/api-keys, you need to add funds to your account)",
@@ -123,6 +129,12 @@ func NewApp(name string) *App { //nolint:funlen
 			Usage:   "OpenAI model name (https://developers.openai.com/api/docs/models)",
 			EnvVars: []string{"OPENAI_MODEL_NAME"},
 			Default: app.opt.Providers.OpenAI.ModelName,
+		}
+		openAIBaseURL = cmd.Flag[string]{
+			Names:   []string{"openai-base-url"},
+			Usage:   "OpenAI API base URL (use to connect to OpenAI-compatible endpoints, e.g. Ollama)",
+			EnvVars: []string{"OPENAI_BASE_URL"},
+			Default: app.opt.Providers.OpenAI.BaseURL,
 		}
 		openRouterApiKey = cmd.Flag[string]{
 			Names:   []string{"openrouter-api-key", "ora"},
@@ -136,6 +148,12 @@ func NewApp(name string) *App { //nolint:funlen
 			EnvVars: []string{"OPENROUTER_MODEL_NAME"},
 			Default: app.opt.Providers.OpenRouter.ModelName,
 		}
+		openRouterBaseURL = cmd.Flag[string]{
+			Names:   []string{"openrouter-base-url"},
+			Usage:   "OpenRouter API base URL (overrides the default endpoint)",
+			EnvVars: []string{"OPENROUTER_BASE_URL"},
+			Default: app.opt.Providers.OpenRouter.BaseURL,
+		}
 		anthropicApiKey = cmd.Flag[string]{
 			Names:   []string{"anthropic-api-key", "ana"},
 			Usage:   "Anthropic API key (https://platform.claude.com/settings/keys)",
@@ -147,6 +165,12 @@ func NewApp(name string) *App { //nolint:funlen
 			Usage:   "Anthropic model name (https://platform.claude.com/docs/en/about-claude/models/overview)",
 			EnvVars: []string{"ANTHROPIC_MODEL_NAME"},
 			Default: app.opt.Providers.Anthropic.ModelName,
+		}
+		anthropicBaseURL = cmd.Flag[string]{
+			Names:   []string{"anthropic-base-url"},
+			Usage:   "Anthropic API base URL (overrides the default endpoint)",
+			EnvVars: []string{"ANTHROPIC_BASE_URL"},
+			Default: app.opt.Providers.Anthropic.BaseURL,
 		}
 	)
 
@@ -161,12 +185,16 @@ func NewApp(name string) *App { //nolint:funlen
 		&aiProviderName,
 		&geminiApiKey,
 		&geminiModelName,
+		&geminiBaseURL,
 		&openAIApiKey,
 		&openAIModelName,
+		&openAIBaseURL,
 		&openRouterApiKey,
 		&openRouterModelName,
+		&openRouterBaseURL,
 		&anthropicApiKey,
 		&anthropicModelName,
+		&anthropicBaseURL,
 	}
 
 	app.cmd.Action = func(ctx context.Context, c *cmd.Command, args []string) error {
@@ -191,12 +219,16 @@ func NewApp(name string) *App { //nolint:funlen
 			setIfFlagIsSet(&app.opt.AIProviderName, aiProviderName)
 			setIfFlagIsSet(&app.opt.Providers.Gemini.ApiKey, geminiApiKey)
 			setIfFlagIsSet(&app.opt.Providers.Gemini.ModelName, geminiModelName)
+			setIfFlagIsSet(&app.opt.Providers.Gemini.BaseURL, geminiBaseURL)
 			setIfFlagIsSet(&app.opt.Providers.OpenAI.ApiKey, openAIApiKey)
 			setIfFlagIsSet(&app.opt.Providers.OpenAI.ModelName, openAIModelName)
+			setIfFlagIsSet(&app.opt.Providers.OpenAI.BaseURL, openAIBaseURL)
 			setIfFlagIsSet(&app.opt.Providers.OpenRouter.ApiKey, openRouterApiKey)
 			setIfFlagIsSet(&app.opt.Providers.OpenRouter.ModelName, openRouterModelName)
+			setIfFlagIsSet(&app.opt.Providers.OpenRouter.BaseURL, openRouterBaseURL)
 			setIfFlagIsSet(&app.opt.Providers.Anthropic.ApiKey, anthropicApiKey)
 			setIfFlagIsSet(&app.opt.Providers.Anthropic.ModelName, anthropicModelName)
+			setIfFlagIsSet(&app.opt.Providers.Anthropic.BaseURL, anthropicBaseURL)
 		}
 
 		if err := app.opt.Validate(); err != nil {
@@ -275,21 +307,25 @@ func (a *App) run(ctx context.Context, workingDir string) error { //nolint:funle
 		provider = ai.NewGemini(
 			a.opt.Providers.Gemini.ApiKey,
 			a.opt.Providers.Gemini.ModelName,
+			ai.WithGeminiBaseURL(a.opt.Providers.Gemini.BaseURL),
 		)
 	case ai.ProviderOpenAI:
 		provider = ai.NewOpenAI(
 			a.opt.Providers.OpenAI.ApiKey,
 			a.opt.Providers.OpenAI.ModelName,
+			ai.WithOpenAIBaseURL(a.opt.Providers.OpenAI.BaseURL),
 		)
 	case ai.ProviderOpenRouter:
 		provider = ai.NewOpenRouter(
 			a.opt.Providers.OpenRouter.ApiKey,
 			a.opt.Providers.OpenRouter.ModelName,
+			ai.WithOpenRouterBaseURL(a.opt.Providers.OpenRouter.BaseURL),
 		)
 	case ai.ProviderAnthropic:
 		provider = ai.NewAnthropic(
 			a.opt.Providers.Anthropic.ApiKey,
 			a.opt.Providers.Anthropic.ModelName,
+			ai.WithAnthropicBaseURL(a.opt.Providers.Anthropic.BaseURL),
 		)
 	default:
 		return fmt.Errorf("unsupported AI provider: %s", a.opt.AIProviderName)
