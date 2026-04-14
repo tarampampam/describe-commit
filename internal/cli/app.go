@@ -73,6 +73,12 @@ func NewApp(name string) *App { //nolint:funlen
 			},
 			Default: app.opt.MaxOutputTokens,
 		}
+		retryAttempts = cmd.Flag[uint]{
+			Names:   []string{"retry-attempts"},
+			Usage:   "Maximum number of retry attempts on retryable API errors (0 = disabled)",
+			EnvVars: []string{"RETRY_ATTEMPTS"},
+			Default: app.opt.MaxRetries,
+		}
 		aiProviderName = cmd.Flag[string]{
 			Names:   []string{"ai-provider", "ai"},
 			Usage:   fmt.Sprintf("AI provider name (%s)", strings.Join(ai.SupportedProviders(), "|")),
@@ -142,6 +148,7 @@ func NewApp(name string) *App { //nolint:funlen
 		&commitHistoryLength,
 		&enableEmoji,
 		&maxOutputTokens,
+		&retryAttempts,
 		&aiProviderName,
 		&geminiApiKey,
 		&geminiModelName,
@@ -170,6 +177,7 @@ func NewApp(name string) *App { //nolint:funlen
 			setIfFlagIsSet(&app.opt.CommitHistoryLength, commitHistoryLength)
 			setIfFlagIsSet(&app.opt.EnableEmoji, enableEmoji)
 			setIfFlagIsSet(&app.opt.MaxOutputTokens, maxOutputTokens)
+			setIfFlagIsSet(&app.opt.MaxRetries, retryAttempts)
 			setIfFlagIsSet(&app.opt.AIProviderName, aiProviderName)
 			setIfFlagIsSet(&app.opt.Providers.Gemini.ApiKey, geminiApiKey)
 			setIfFlagIsSet(&app.opt.Providers.Gemini.ModelName, geminiModelName)
@@ -247,7 +255,7 @@ func (a *App) Run(ctx context.Context, args []string) error { return a.cmd.Run(c
 func (a *App) Help() string { return a.cmd.Help() }
 
 // run in the main logic of the application.
-func (a *App) run(ctx context.Context, workingDir string) error { //nolint:funlen
+func (a *App) run(ctx context.Context, workingDir string) error { //nolint:funlen,gocyclo
 	debug.Printf("AI provider: %s", a.opt.AIProviderName)
 
 	var provider ai.Provider

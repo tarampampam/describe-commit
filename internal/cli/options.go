@@ -16,6 +16,7 @@ type options struct {
 	CommitHistoryLength int64
 	EnableEmoji         bool
 	MaxOutputTokens     int64
+	MaxRetries          uint
 	AIProviderName      string
 
 	Providers struct {
@@ -30,6 +31,7 @@ func newOptionsWithDefaults() options {
 	var opt = options{
 		CommitHistoryLength: 20,                //nolint:mnd
 		MaxOutputTokens:     500,               //nolint:mnd
+		MaxRetries:          5,                 //nolint:mnd
 		AIProviderName:      ai.ProviderGemini, // due to its free
 	}
 
@@ -70,6 +72,7 @@ func (o *options) UpdateFromConfigFile(filePath []string) error {
 	setIfSourceNotNil(&o.CommitHistoryLength, cfg.CommitHistoryLength)
 	setIfSourceNotNil(&o.EnableEmoji, cfg.EnableEmoji)
 	setIfSourceNotNil(&o.MaxOutputTokens, cfg.MaxOutputTokens)
+	setIfSourceNotNil(&o.MaxRetries, cfg.MaxRetries)
 	setIfSourceNotNil(&o.AIProviderName, cfg.AIProviderName)
 
 	if sub := cfg.Gemini; sub != nil {
