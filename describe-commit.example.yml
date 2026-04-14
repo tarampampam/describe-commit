@@ -37,7 +37,11 @@ gemini:
 
   # Gemini model name (https://ai.google.dev/gemini-api/docs/models)
   # @type {string}
-  #modelName: <gemini-model-name>
+  #modelName: gemini-2.5-flash
+
+  # Gemini API base URL (overrides the default endpoint; useful for proxies or Gemini-compatible services)
+  # @type {string}
+  #baseUrl: https://generativelanguage.googleapis.com
 
 # OpenAI provider configuration
 openai:
@@ -48,7 +52,11 @@ openai:
 
   # OpenAI model name (https://developers.openai.com/api/docs/models)
   # @type {string}
-  #modelName: <openai-model-name>
+  #modelName: gpt-4.1-nano
+
+  # OpenAI API base URL (overrides the default endpoint; useful for OpenAI-compatible services such as Ollama)
+  # @type {string}
+  #baseUrl: https://api.openai.com
 
 # OpenRouter provider configuration
 openrouter:
@@ -56,9 +64,13 @@ openrouter:
   # @type {string}
   apiKey: <openrouter-api-key>
 
-  # OpenAI model name (https://openrouter.ai/models?order=pricing-low-to-high)
+  # OpenRouter model name (https://openrouter.ai/models?order=pricing-low-to-high)
   # @type {string}
-  #modelName: <openrouter-model-name>
+  #modelName: google/gemma-4-31b-it:free
+
+  # OpenRouter API base URL (overrides the default endpoint; useful for proxies or OpenRouter-compatible services)
+  # @type {string}
+  #baseUrl: https://openrouter.ai
 
 # Anthropic provider configuration
 anthropic:
@@ -68,4 +80,8 @@ anthropic:
 
   # Anthropic model name (https://platform.claude.com/docs/en/about-claude/models/overview)
   # @type {string}
-  #modelName: <anthropic-model-name>
+  #modelName: claude-haiku-4-5-20251001
+
+  # Anthropic API base URL (overrides the default endpoint; useful for proxies or Anthropic-compatible services)
+  # @type {string}
+  #baseUrl: https://api.anthropic.com
