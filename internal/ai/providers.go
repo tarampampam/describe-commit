@@ -19,7 +19,10 @@ type (
 	}
 )
 
-const defaultMaxOutputTokens = 500
+const (
+	defaultMaxOutputTokens = 500
+	roleUser               = "user"
+)
 
 // httpClient is an interface for the common HTTP client.
 type httpClient interface {
