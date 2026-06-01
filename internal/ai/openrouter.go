@@ -146,8 +146,8 @@ func (p *OpenRouter) newRequest(
 		MaxTokens:   o.MaxOutputTokens,
 		Messages: []message{
 			{Role: "system", Content: instructions},
-			{Role: "user", Content: wrapChanges(changes)},
-			{Role: "user", Content: wrapCommits(commits)},
+			{Role: roleUser, Content: wrapChanges(changes)},
+			{Role: roleUser, Content: wrapCommits(commits)},
 		},
 	})
 	if jErr != nil {

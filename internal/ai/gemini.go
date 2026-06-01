@@ -13,6 +13,8 @@ import (
 
 const geminiDefaultBaseURL = "https://generativelanguage.googleapis.com"
 
+const safetyThresholdBlockLowAndAbove = "BLOCK_LOW_AND_ABOVE"
+
 // Gemini is a provider for the Gemini API.
 type Gemini struct {
 	httpClient        httpClient
@@ -166,10 +168,10 @@ func (p *Gemini) newRequest( //nolint:funlen
 			CandidateCount:  1,
 		},
 		SafetySettings: []safetySetting{
-			{Category: "HARM_CATEGORY_DANGEROUS_CONTENT", Threshold: "BLOCK_LOW_AND_ABOVE"},
-			{Category: "HARM_CATEGORY_HARASSMENT", Threshold: "BLOCK_LOW_AND_ABOVE"},
-			{Category: "HARM_CATEGORY_HATE_SPEECH", Threshold: "BLOCK_LOW_AND_ABOVE"},
-			{Category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", Threshold: "BLOCK_LOW_AND_ABOVE"},
+			{Category: "HARM_CATEGORY_DANGEROUS_CONTENT", Threshold: safetyThresholdBlockLowAndAbove},
+			{Category: "HARM_CATEGORY_HARASSMENT", Threshold: safetyThresholdBlockLowAndAbove},
+			{Category: "HARM_CATEGORY_HATE_SPEECH", Threshold: safetyThresholdBlockLowAndAbove},
+			{Category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", Threshold: safetyThresholdBlockLowAndAbove},
 		},
 		Contents: []content{{Parts: []contentPart{
 			{Text: wrapChanges(changes)},

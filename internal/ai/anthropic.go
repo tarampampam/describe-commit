@@ -147,8 +147,8 @@ func (p *Anthropic) newRequest(
 		TopP:        0.1, //nolint:mnd
 		MaxTokens:   o.MaxOutputTokens,
 		Messages: []message{
-			{Role: "user", Content: wrapChanges(changes)},
-			{Role: "user", Content: wrapCommits(commits)},
+			{Role: roleUser, Content: wrapChanges(changes)},
+			{Role: roleUser, Content: wrapCommits(commits)},
 		},
 	})
 	if jErr != nil {
